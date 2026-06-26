@@ -3,3 +3,8 @@ export * from "./models/auth";
 export * from "./models/organization";
 export * from "./models/member";
 export * from "./models/project";
+export * from "./models/github-installation";
+export * from "./models/repository";
+export * from "./models/feature-request";
+export * from "./models/pull-request";
+export * from "./models/discovery";

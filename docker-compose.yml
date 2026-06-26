@@ -2,12 +2,12 @@ services:
   postgresdb:
     image: postgres:15
     restart: unless-stopped
-    container_name: postgresdb
+    container_name: indecode-postgres-dev
 
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dev
+      POSTGRES_DB: indecode
 
     ports:
       - "5432:5432"

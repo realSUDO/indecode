@@ -9,9 +9,16 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.0",
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/rest": "^22.0.1",
+    "@openrouter/ai-sdk-provider": "^2.10.0",
     "@repo/database": "workspace:*",
     "@repo/logger": "workspace:*",
+    "ai": "^7.0.2",
+    "drizzle-orm": "^0.45.1",
     "google-auth-library": "^10.5.0",
+    "inngest": "^4.11.0",
     "zod": "^4.3.5"
   }
 }

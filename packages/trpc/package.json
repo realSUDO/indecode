@@ -9,9 +9,12 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@openrouter/ai-sdk-provider": "^2.10.0",
     "@repo/services": "workspace:*",
     "@trpc/client": "^11.8.1",
     "@trpc/server": "^11.8.1",
+    "ai": "^7.0.2",
+    "inngest": "^4.11.0",
     "trpc-to-openapi": "^3.1.0",
     "zod": "^4.3.5"
   }
