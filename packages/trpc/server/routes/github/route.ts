@@ -2,8 +2,9 @@ import { z } from "zod";
 import { router, publicProcedure } from "../../trpc";
 import { getAppOctokit, getInstallUrl, getInstallationOctokit } from "@repo/services/github";
 import { db } from "@repo/database";
-import { githubInstallations, repositories } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { githubInstallations, repositories, codebaseEmbeddings } from "@repo/database/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { inngest } from "@repo/services/inngest";
 
 export const githubRouter = router({
   getInstallationStatus: publicProcedure
@@ -67,8 +68,6 @@ export const githubRouter = router({
     }))
     .mutation(async ({ input }) => {
       // Create repository mapping in DB
-      // Note: We should fetch githubInstallationId from the context/project's org, 
-      // simplified here for demonstration
       const installation = await db.query.githubInstallations.findFirst();
       if (!installation) throw new Error("No installation found");
 
@@ -89,6 +88,38 @@ export const githubRouter = router({
     .input(z.object({ repositoryId: z.string() }))
     .mutation(async ({ input }) => {
       await db.delete(repositories).where(eq(repositories.id, input.repositoryId));
+      return { success: true };
+    }),
+
+  listConnectedRepos: publicProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ input }) => {
+      const connected = await db.select({
+        id: repositories.id,
+        fullName: repositories.fullName,
+        language: repositories.language,
+        chunkCount: sql<number>`count(${codebaseEmbeddings.id})::int`
+      })
+      .from(repositories)
+      .leftJoin(codebaseEmbeddings, eq(repositories.id, codebaseEmbeddings.repositoryId))
+      .where(eq(repositories.projectId, input.projectId))
+      .groupBy(repositories.id, repositories.fullName, repositories.language);
+
+      return connected.map(repo => ({
+        id: repo.id,
+        fullName: repo.fullName,
+        language: repo.language,
+        chunkCount: repo.chunkCount,
+      }));
+    }),
+
+  syncRepoCodebase: publicProcedure
+    .input(z.object({ repositoryId: z.string() }))
+    .mutation(async ({ input }) => {
+      await inngest.send({
+        name: "repo/sync",
+        data: { repositoryId: input.repositoryId },
+      });
       return { success: true };
     })
 });

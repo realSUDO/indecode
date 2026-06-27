@@ -214,10 +214,18 @@ export default function TasksPage() {
           </div>
           <button 
             onClick={() => implementMutation.mutate({ featureRequestId: featureId })}
-            disabled={implementMutation.isPending}
-            className="ml-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            disabled={implementMutation.isPending || implementMutation.isSuccess}
+            className={`ml-4 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+              implementMutation.isSuccess 
+                ? "bg-emerald-600 hover:bg-emerald-500" 
+                : "bg-indigo-600 hover:bg-indigo-500"
+            }`}
           >
-            {implementMutation.isPending ? "Starting AI..." : "Implement with AI ✨"}
+            {implementMutation.isPending 
+              ? "Starting AI..." 
+              : implementMutation.isSuccess 
+                ? "AI Implementing... Check GitHub! 🚀" 
+                : "Implement with AI ✨"}
           </button>
         </div>
       </div>

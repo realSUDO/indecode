@@ -27,14 +27,11 @@ export const syncRepoCodebase = inngest.createFunction(
       throw new Error(`Repository not found or not connected properly: ${repositoryId}`);
     }
 
-    const octokit = await step.run("init-octokit", async () => {
-      return await getInstallationOctokit(repo.githubInstallation.installationId);
-    });
-
     // In a real production setup we would clone the repo, but for MVP we fetch the tree
     const [owner, name] = repo.fullName.split("/");
 
     const files = await step.run("fetch-repo-tree", async () => {
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
       const { data: commit } = await octokit.rest.repos.getCommit({
         owner,
         repo: name,
@@ -49,17 +46,28 @@ export const syncRepoCodebase = inngest.createFunction(
         recursive: "true"
       });
 
-      // Filter only code files
-      const allowedExtensions = [".ts", ".tsx", ".js", ".jsx", ".py", ".md", ".json"];
+    // Filter only code files
+      const allowedExtensions = [
+        ".ts", ".tsx", ".js", ".jsx", ".py", ".md", ".json", 
+        ".html", ".css", ".java", ".go", ".rb", ".php", ".cs", ".cpp", ".c", ".h"
+      ];
       return tree.tree
         .filter(t => t.type === "blob")
         .filter(t => allowedExtensions.some(ext => (t.path || "").endsWith(ext)))
         .map(t => t.path as string);
     });
 
+    await step.run("update-status-debug", async () => {
+      await db.update(repositories).set({
+        analysisStatus: "syncing",
+        analysisData: { processedFiles: files.length, fileNames: files, step: "fetch-repo-tree-done" },
+      }).where(eq(repositories.id, repositoryId));
+    });
+
     // We chunk the files and process them
     for (const filePath of files) {
       await step.run(`process-file-${filePath.replace(/[^a-zA-Z0-9]/g, "-")}`, async () => {
+        const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
         const { data: fileData } = await octokit.rest.repos.getContent({
           owner,
           repo: name,
@@ -88,6 +96,13 @@ export const syncRepoCodebase = inngest.createFunction(
         }
       });
     }
+
+    await step.run("update-status", async () => {
+      await db.update(repositories).set({
+        analysisStatus: "completed",
+        analysisData: { processedFiles: files.length, fileNames: files, step: "all-done" },
+      }).where(eq(repositories.id, repositoryId));
+    });
 
     return { success: true, processedFiles: files.length };
   }
