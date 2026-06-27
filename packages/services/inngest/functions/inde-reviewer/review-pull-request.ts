@@ -1,4 +1,4 @@
-import { inngest } from "../../../client";
+import { inngest } from "../../client";
 import { db } from "@repo/database";
 import { pullRequests, reviews, reviewIssues, prds, tasks, codebaseEmbeddings } from "@repo/database/schema";
 import { eq, sql } from "drizzle-orm";

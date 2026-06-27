@@ -1,4 +1,4 @@
-import { getInstallationOctokit } from "../../../../github/index";
+import { getInstallationOctokit } from "../../../github/index";
 
 const FILES_PER_PAGE = 100;
 
