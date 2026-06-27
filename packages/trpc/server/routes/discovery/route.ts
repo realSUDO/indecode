@@ -160,8 +160,11 @@ export const discoveryRouter = router({
         .set({ status: "prd_draft" })
         .where(eq(featureRequests.id, input.featureRequestId));
 
-      // In the future, trigger PRD generation via Inngest:
-      // await inngest.send({ name: "discovery/session.complete", data: { featureRequestId: input.featureRequestId, discoverySessionId: session.id } });
+      // Trigger PRD generation via Inngest
+      await inngest.send({
+        name: "discovery/session.complete",
+        data: { featureRequestId: input.featureRequestId, discoverySessionId: session.id },
+      });
 
       return { success: true };
     }),

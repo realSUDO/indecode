@@ -8,3 +8,5 @@ export * from "./models/repository";
 export * from "./models/feature-request";
 export * from "./models/pull-request";
 export * from "./models/discovery";
+export * from "./models/prd";
+export * from "./models/task";

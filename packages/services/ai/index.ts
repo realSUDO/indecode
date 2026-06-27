@@ -4,20 +4,18 @@ const getApiKey = () => process.env.OPENROUTER_API_KEY || "";
 
 const openrouter = createOpenRouter({ apiKey: getApiKey() });
 
-export const getDiscoveryModel = () => {
-  return openrouter("google/gemma-4-31b-it:free");
-};
+// Using a free model for all phases during development.
+// Swap individual getters to paid models when credits are available.
+const FREE_MODEL = "google/gemma-4-31b-it:free";
 
-/**
- * Get a powerful model for deep reasoning (Code Review).
- */
-export const getReviewModel = () => {
-  return openrouter("anthropic/claude-sonnet-4");
-};
+/** Conversational AI for Discovery chat */
+export const getDiscoveryModel = () => openrouter(FREE_MODEL);
 
-/**
- * Get a balanced model for task planning.
- */
-export const getPlanningModel = () => {
-  return openrouter("anthropic/claude-sonnet-4");
-};
+/** Single-shot PRD generation */
+export const getPRDModel = () => openrouter(FREE_MODEL);
+
+/** Task breakdown from approved PRD */
+export const getPlanningModel = () => openrouter(FREE_MODEL);
+
+/** Deep reasoning for code review (swap to Sonnet/Opus in production) */
+export const getReviewModel = () => openrouter(FREE_MODEL);
