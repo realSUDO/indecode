@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { db } from "@repo/database";
 import { githubInstallations, pullRequests, repositories } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
-
+import { inngest } from "@repo/services/inngest";
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "";
 
 export async function POST(req: Request) {
@@ -78,7 +78,19 @@ export async function POST(req: Request) {
               .where(eq(pullRequests.id, existingPr.id));
           }
 
-          // In the future: trigger Inngest event for AI review here
+          // Trigger Inngest event for AI review
+          await inngest.send({
+            name: "github/pr.received",
+            data: {
+              pullRequestId: existingPr ? existingPr.id : (await db.query.pullRequests.findFirst({
+                where: and(
+                  eq(pullRequests.repositoryId, repoRecord.id),
+                  eq(pullRequests.prNumber, payload.pull_request.number)
+                )
+              }))!.id
+            }
+          });
+
           console.log(`[GitHub Webhook] Captured PR #${payload.pull_request.number} for ${repoFullName}`);
         }
       }

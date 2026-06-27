@@ -5,7 +5,8 @@ import {
   generatePRDFunction, 
   createTasksFunction,
   syncRepoCodebase,
-  implementFeatureFunction
+  implementFeatureFunction,
+  reviewPullRequest
 } from "@repo/services/inngest";
 
 export const { GET, POST, PUT } = serve({
@@ -16,6 +17,7 @@ export const { GET, POST, PUT } = serve({
     createTasksFunction,
     syncRepoCodebase,
     implementFeatureFunction,
+    reviewPullRequest,
   ],
   isDev: true,
 });

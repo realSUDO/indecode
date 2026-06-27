@@ -11,3 +11,4 @@ export * from "./models/discovery";
 export * from "./models/prd";
 export * from "./models/task";
 export * from "./models/embeddings";
+export * from "./models/review";

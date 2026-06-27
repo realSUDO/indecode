@@ -4,3 +4,4 @@ export { generatePRDFunction } from "./functions/generate-prd";
 export { createTasksFunction } from "./functions/create-tasks";
 export { syncRepoCodebase } from "./functions/sync-repo";
 export { implementFeatureFunction } from "./functions/implement-feature";
+export { reviewPullRequest } from "./functions/review-pull-request";
