@@ -17,3 +17,16 @@ export const repositories = pgTable("repositories", {
 }, (table) => [
   unique("project_repo_unique").on(table.projectId, table.fullName),
 ]);
+
+import { relations } from "drizzle-orm";
+
+export const repositoriesRelations = relations(repositories, ({ one }) => ({
+  project: one(projects, {
+    fields: [repositories.projectId],
+    references: [projects.id],
+  }),
+  githubInstallation: one(githubInstallations, {
+    fields: [repositories.githubInstallationId],
+    references: [githubInstallations.id],
+  }),
+}));

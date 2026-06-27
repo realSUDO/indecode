@@ -12,3 +12,10 @@ export const githubInstallations = pgTable("github_installations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdate(() => new Date()),
 });
+
+import { relations } from "drizzle-orm";
+import { repositories } from "./repository";
+
+export const githubInstallationsRelations = relations(githubInstallations, ({ many }) => ({
+  repositories: many(repositories),
+}));

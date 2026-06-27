@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../../trpc";
 import { db } from "@repo/database";
-import { featureRequests } from "@repo/database/schema";
+import { featureRequests, users } from "@repo/database/schema";
 import { eq, desc } from "drizzle-orm";
 import { inngest } from "@repo/services/inngest";
 
@@ -14,37 +14,42 @@ export const featureRequestRouter = router({
       source: z.string().optional().default("manual"),
     }))
     .mutation(async ({ input }) => {
-      // Find a valid user to satisfy the foreign key, or create a dummy one
-      let user = await db.query.users.findFirst();
-      if (!user) {
-        const { users } = await import("@repo/database/schema");
-        [user] = await db.insert(users).values({
-          name: "System User",
-          email: "system@indecode.local",
+      try {
+        // Find a valid user to satisfy the foreign key, or create a dummy one
+        let user = await db.query.users.findFirst();
+        if (!user) {
+          [user] = await db.insert(users).values({
+            id: "system-user-id",
+            name: "System User",
+            email: "system@indecode.local",
+          }).returning();
+        }
+        
+        const createdById = user.id;
+
+        const [newFeature] = await db.insert(featureRequests).values({
+          projectId: input.projectId,
+          title: input.title,
+          description: input.description,
+          source: input.source,
+          createdById,
         }).returning();
+
+        // Trigger Inngest event to create discovery session
+        await inngest.send({
+          name: "feature/request.created",
+          data: { featureRequestId: newFeature.id },
+        });
+
+        return {
+          id: newFeature.id,
+          title: newFeature.title,
+          status: newFeature.status,
+        };
+      } catch (err: any) {
+        console.error("Error creating feature request:", err);
+        throw new Error(`Failed to create feature request: ${err.message}`);
       }
-      
-      const createdById = user.id;
-
-      const [newFeature] = await db.insert(featureRequests).values({
-        projectId: input.projectId,
-        title: input.title,
-        description: input.description,
-        source: input.source,
-        createdById,
-      }).returning();
-
-      // Trigger Inngest event to create discovery session
-      await inngest.send({
-        name: "feature/request.created",
-        data: { featureRequestId: newFeature.id },
-      });
-
-      return {
-        id: newFeature.id,
-        title: newFeature.title,
-        status: newFeature.status,
-      };
     }),
 
   list: publicProcedure
@@ -115,5 +120,19 @@ export const featureRequestRouter = router({
         .returning();
 
       return { id: updated.id, status: updated.status };
+    }),
+
+  triggerImplementation: publicProcedure
+    .input(z.object({
+      featureRequestId: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      // Trigger Inngest event to start the autonomous AI implementation agent
+      await inngest.send({
+        name: "feature/implement",
+        data: { featureRequestId: input.featureRequestId },
+      });
+
+      return { success: true };
     }),
 });

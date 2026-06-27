@@ -9,11 +9,7 @@ export const githubRouter = router({
   getInstallationStatus: publicProcedure
     .input(z.object({ organizationId: z.string().optional() }))
     .query(async ({ input }) => {
-      const result = await db.query.githubInstallations.findFirst({
-        where: input.organizationId 
-          ? eq(githubInstallations.organizationId, input.organizationId)
-          : undefined // Ideally filter by userId if no org provided, assuming single user mode for now
-      });
+      const result = await db.query.githubInstallations.findFirst();
 
       if (!result) {
         return { connected: false, accountLogin: null, installedAt: null };
@@ -38,15 +34,13 @@ export const githubRouter = router({
     .input(z.object({ organizationId: z.string().optional() }))
     .query(async ({ input }) => {
       // Fetch the installation from our DB first
-      const installation = await db.query.githubInstallations.findFirst({
-        where: input.organizationId 
-          ? eq(githubInstallations.organizationId, input.organizationId)
-          : undefined
-      });
+      const installation = await db.query.githubInstallations.findFirst();
 
       if (!installation) {
         throw new Error("GitHub App is not installed for this workspace.");
       }
+
+      console.log("Found installation ID in DB:", installation.installationId);
 
       const octokit = await getInstallationOctokit(installation.installationId);
       

@@ -29,6 +29,13 @@
       "when": 1782538215468,
       "tag": "0003_petite_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782546710151,
+      "tag": "0004_flawless_strong_guy",
+      "breakpoints": true
     }
   ]
 }

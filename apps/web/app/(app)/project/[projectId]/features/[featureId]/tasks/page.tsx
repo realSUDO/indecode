@@ -152,6 +152,8 @@ export default function TasksPage() {
     onSuccess: () => utils.task.listByFeature.invalidate({ featureRequestId: featureId }),
   });
 
+  const implementMutation = trpc.featureRequest.triggerImplementation.useMutation();
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -210,6 +212,13 @@ export default function TasksPage() {
               </div>
             ))}
           </div>
+          <button 
+            onClick={() => implementMutation.mutate({ featureRequestId: featureId })}
+            disabled={implementMutation.isPending}
+            className="ml-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {implementMutation.isPending ? "Starting AI..." : "Implement with AI ✨"}
+          </button>
         </div>
       </div>
 

@@ -13,3 +13,12 @@ export const featureRequests = pgTable("feature_requests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdate(() => new Date()),
 });
+
+import { relations } from "drizzle-orm";
+
+export const featureRequestsRelations = relations(featureRequests, ({ one }) => ({
+  project: one(projects, {
+    fields: [featureRequests.projectId],
+    references: [projects.id],
+  }),
+}));

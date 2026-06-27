@@ -2,12 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { 
   BarChart, 
   Settings, 
   FolderGit2, 
   LayoutDashboard,
-  MessageSquare
+  MessageSquare,
+  Box
 } from "lucide-react";
 import {
   Sidebar,
@@ -17,9 +19,25 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from "~/components/ui/sidebar";
+import { trpc } from "~/trpc/client";
+import { ProjectSidebar } from "./project-sidebar";
 
 export function AppSidebar() {
+  const params = useParams();
+  const projectId = params?.projectId as string;
+
+  const { data: projects } = trpc.project.list.useQuery(undefined, {
+    enabled: !projectId
+  });
+
+  if (projectId) {
+    return <ProjectSidebar />;
+  }
+
   return (
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader>
@@ -44,31 +62,48 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Discovery">
-              <Link href="/discovery">
-                <MessageSquare />
-                <span>Discovery</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Analytics">
-              <Link href="/analytics">
-                <BarChart />
-                <span>Analytics</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings">
-              <Link href="/settings">
-                <Settings />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {projects?.map((project) => (
+                <SidebarMenuItem key={project.id}>
+                  <SidebarMenuButton asChild tooltip={project.name}>
+                    <Link href={`/project/${project.id}/features`}>
+                      <Box />
+                      <span>{project.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {projects && projects.length === 0 && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="No projects">
+                    <span className="text-muted-foreground opacity-50 text-sm">No projects yet</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Settings">
+                  <Link href="/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>

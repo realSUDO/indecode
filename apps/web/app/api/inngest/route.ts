@@ -1,5 +1,12 @@
 import { serve } from "inngest/next";
-import { inngest, processFeatureRequest, generatePRDFunction, createTasksFunction } from "@repo/services/inngest";
+import { 
+  inngest, 
+  processFeatureRequest, 
+  generatePRDFunction, 
+  createTasksFunction,
+  syncRepoCodebase,
+  implementFeatureFunction
+} from "@repo/services/inngest";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -7,6 +14,8 @@ export const { GET, POST, PUT } = serve({
     processFeatureRequest,
     generatePRDFunction,
     createTasksFunction,
+    syncRepoCodebase,
+    implementFeatureFunction,
   ],
   isDev: true,
 });

@@ -6,7 +6,7 @@ const openrouter = createOpenRouter({ apiKey: getApiKey() });
 
 // Using a free model for all phases during development.
 // Swap individual getters to paid models when credits are available.
-const FREE_MODEL = "google/gemma-4-31b-it:free";
+const FREE_MODEL = "meta-llama/llama-3.1-70b-instruct";
 
 /** Conversational AI for Discovery chat */
 export const getDiscoveryModel = () => openrouter(FREE_MODEL);
