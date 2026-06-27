@@ -7,6 +7,7 @@ export const reviews = pgTable("reviews", {
     .notNull()
     .references(() => pullRequests.id, { onDelete: "cascade" }),
   iteration: integer("iteration").notNull(),
+  status: text("status").default("analyzing").notNull(), // 'analyzing', 'completed', 'failed'
   summary: text("summary").notNull(),
   overallVerdict: text("overall_verdict").notNull(), // 'approved', 'changes_required', 'needs_discussion'
   reviewData: jsonb("review_data").notNull(),
