@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useMotionTemplate, useMotionValue, useInView, useScroll, useTransform, useMotionValueEvent } from "motion/react";
-import { Github, ArrowRight, Sun, Moon } from "lucide-react";
+import { Github, ArrowRight} from "lucide-react";
 import { PipelineAnimation } from "./pipeline";
 
 // ─── Interactive Early Access Button ────────────────────────────────────────
@@ -35,12 +35,14 @@ function EarlyAccessButton() {
       transition={{ type: "spring", bounce: 0, duration: 0.4 }}
       className="relative p-[1.5px] rounded-full overflow-hidden shadow-[0_0_25px_rgba(255,255,255,0.05)] group"
     >
-      {/* Premium Sweeping Rainbow Border */}
+      {/* Static border when closed */}
+      <div className={`absolute inset-0 transition-opacity duration-300 ${isOpen ? "opacity-0" : "opacity-100 bg-white/[0.1]"}`} />
+
       {/* Moving Rainbow Border Layer */}
       <div 
-        className="absolute left-1/2 top-1/2 w-[600px] h-[600px] bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)]" 
+        className={`absolute left-1/2 top-1/2 w-[600px] h-[600px] bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)] transition-opacity duration-500 ${isOpen ? "opacity-100" : "opacity-0"}`} 
         style={{
-          animation: "spin-smooth 4s linear infinite, pulse-fade 8s linear infinite"
+          animation: "spin-smooth 4s linear infinite"
         }}
       />
       
@@ -48,12 +50,6 @@ function EarlyAccessButton() {
         @keyframes spin-smooth {
           0% { transform: translate(-50%, -50%) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        @keyframes pulse-fade {
-          0%, 75% { opacity: 0.8; }
-          80% { opacity: 0; }
-          90% { opacity: 0; }
-          95%, 100% { opacity: 0.8; }
         }
       `}} />
       
@@ -114,7 +110,7 @@ function InteractiveCanvas() {
 
     const init = () => {
       particles = [];
-      const numParticles = Math.min((w * h) / 10000, 150);
+      const numParticles = Math.min((w * h) / 4000, 400);
       for (let i = 0; i < numParticles; i++) {
         particles.push({
           x: Math.random() * w, y: Math.random() * h,
@@ -151,7 +147,7 @@ function InteractiveCanvas() {
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist2 = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist2 < 120) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - dist2 / 120) * 0.2})`; ctx.stroke(); }
+          if (dist2 < 180) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - dist2 / 180) * 0.35})`; ctx.stroke(); }
         }
       }
       rafId = requestAnimationFrame(render);
@@ -188,7 +184,6 @@ function RevealWord({ word, progress, index, total }: { word: string; progress: 
 function Navbar() {
   const { scrollY } = useScroll();
   const [clickCount, setClickCount] = useState(0);
-  const [isDark, setIsDark] = useState(true);
 
   const btnColors = [
     "bg-white text-black hover:bg-neutral-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]",
@@ -300,18 +295,12 @@ function Navbar() {
         
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8 px-4 text-xs font-medium text-neutral-400">
-          <a href="#" className="hover:text-white transition-colors">Platform</a>
-          <a href="#" className="hover:text-white transition-colors">Solutions</a>
-          <a href="#" className="hover:text-white transition-colors">Developers</a>
+          <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+          <a href="#solutions" className="hover:text-white transition-colors">Solutions</a>
+          <a href="#developers" className="hover:text-white transition-colors">Developers</a>
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setIsDark(!isDark)}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
-          >
-            {isDark ? <Moon size={16} /> : <Sun size={16} />}
-          </button>
           <button 
             onClick={() => setClickCount(prev => prev + 1)}
             className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-105 ${currentBtnColor}`}
@@ -340,7 +329,7 @@ function HeroSection() {
       {/* Background Interactive Canvas — parallax layer */}
       <motion.div
         style={{ y: canvasY }}
-        className="absolute top-0 right-0 bottom-0 w-full lg:w-[80%] z-0 opacity-50 mix-blend-screen [mask-image:linear-gradient(to_right,transparent,black_40%,black_100%)] scale-110"
+        className="absolute top-0 right-0 bottom-0 w-full lg:w-[80%] z-0 opacity-90 mix-blend-screen [mask-image:linear-gradient(to_right,transparent,black_30%,black_100%)] scale-110"
       >
         <InteractiveCanvas />
       </motion.div>
@@ -415,7 +404,7 @@ function PipelineSection() {
   }
 
   return (
-    <section ref={ref} onMouseMove={handleMouseMove} className="relative w-full min-h-[90vh] flex items-center py-40 md:py-56 overflow-hidden group [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
+    <section id="platform" ref={ref} onMouseMove={handleMouseMove} className="relative w-full min-h-[90vh] flex items-center py-40 md:py-56 overflow-hidden group [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
       {/* Premium Technical Grid Background instead of flat grey */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] pointer-events-none" />
       
@@ -501,7 +490,7 @@ function AnimatedTerminal() {
   ];
 
   return (
-    <section ref={containerRef} className="py-32 md:py-44 relative overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
+    <section id="developers" ref={containerRef} className="py-32 md:py-44 relative overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
       <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
         {/* Left — text */}
         <motion.div
@@ -630,7 +619,7 @@ function BentoSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
 
   return (
-    <section ref={ref} className="py-32 md:py-48 relative overflow-hidden">
+    <section id="solutions" ref={ref} className="py-32 md:py-48 relative overflow-hidden">
       <motion.div
         style={{ scale, opacity }}
         className="max-w-7xl mx-auto px-6 sm:px-12 w-full relative z-10"
@@ -780,7 +769,7 @@ export default function LandingPage() {
   const auroraOpacity = useTransform(scrollYProgress, [0, 0.15], [0, 1]);
 
   return (
-    <div className="min-h-screen bg-black font-sans antialiased selection:bg-white selection:text-black overflow-x-hidden relative">
+    <div className="min-h-screen scroll-smooth bg-black font-sans antialiased selection:bg-white selection:text-black overflow-x-hidden relative">
       
       {/* 3D Parallax Starfield */}
       <SpaceParticles opacity={auroraOpacity} />
