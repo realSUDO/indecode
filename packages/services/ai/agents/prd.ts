@@ -61,7 +61,6 @@ export async function generatePRD(input: PRDInput): Promise<string> {
 ${transcript}
 
 Now write the full PRD based on everything discussed above.`,
-    maxTokens: 2000,
   });
 
   return result.text;

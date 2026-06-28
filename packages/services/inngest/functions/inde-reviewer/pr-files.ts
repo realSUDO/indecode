@@ -17,7 +17,7 @@ export async function getPullRequestFiles(
 
   const { data } = await octokit.request(
     "GET /repos/{owner}/{repo}/pulls/{pull_number}/files",
-    { owner, repo, pull_number: prNumber, per_page: FILES_PER_PAGE }
+    { owner: owner as string, repo: repo as string, pull_number: prNumber, per_page: FILES_PER_PAGE }
   );
 
   const files: PrFile[] = [];

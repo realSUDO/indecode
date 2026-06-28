@@ -210,8 +210,8 @@ ${diffStr.slice(0, 80000)} // truncate to avoid token limits
 
       // 1. Post overall summary comment
       await octokit.rest.issues.createComment({
-        owner,
-        repo,
+        owner: owner as string,
+        repo: repo as string,
         issue_number: prInfo.prNumber,
         body: commentBody
       });
@@ -220,11 +220,11 @@ ${diffStr.slice(0, 80000)} // truncate to avoid token limits
       if (reviewOutput.issues && reviewOutput.issues.length > 0) {
         // We get the latest commit SHA to post reviews against
         const { data: commits } = await octokit.rest.pulls.listCommits({
-          owner,
-          repo,
+          owner: owner as string,
+          repo: repo as string,
           pull_number: prInfo.prNumber,
         });
-        const latestCommitId = commits[commits.length - 1].sha;
+        const latestCommitId = commits?.[commits.length - 1]?.sha;
 
         for (const issue of reviewOutput.issues) {
           if (issue.filePath && issue.lineNumber) {
@@ -235,10 +235,10 @@ ${diffStr.slice(0, 80000)} // truncate to avoid token limits
               }
               
               await octokit.rest.pulls.createReviewComment({
-                owner,
-                repo,
+                owner: owner as string,
+                repo: repo as string,
                 pull_number: prInfo.prNumber,
-                commit_id: latestCommitId,
+                commit_id: latestCommitId as string,
                 path: issue.filePath,
                 line: issue.lineNumber,
                 body,

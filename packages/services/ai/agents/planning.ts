@@ -40,7 +40,6 @@ export async function generateTasksFromPRD(input: PlanningInput): Promise<Genera
     prompt: `Break down the following PRD for "${input.featureTitle}" into engineering tasks.
 
 ${input.prdContent}`,
-    maxTokens: 2000,
   });
 
   // Parse JSON, stripping any accidental markdown fences

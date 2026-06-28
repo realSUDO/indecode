@@ -103,6 +103,7 @@ export const discoveryRouter = router({
       // Get feature request for context
       const feature = await db.query.featureRequests.findFirst({
         where: eq(featureRequests.id, input.featureRequestId),
+        with: { project: { with: { repositories: true } } }
       });
       if (!feature) throw new Error("Feature request not found");
 
@@ -119,12 +120,38 @@ export const discoveryRouter = router({
         content: m.content,
       }));
 
+      // RAG Logic
+      let codeContext = "";
+      const repo = feature.project?.repositories[0];
+      if (repo) {
+        const { embedCode } = require("@repo/services/ai/embeddings");
+        const { codebaseEmbeddings } = require("@repo/database/schema");
+        const { sql } = require("drizzle-orm");
+        
+        const queryEmbeddings = await embedCode(`Feature: ${feature.title}\nUser says: ${input.message}`);
+        const similarity = sql<number>`1 - (${codebaseEmbeddings.embedding} <=> ${JSON.stringify(queryEmbeddings)}::vector)`;
+        
+        const results = await db.select({
+          filePath: codebaseEmbeddings.filePath,
+          content: codebaseEmbeddings.content,
+        })
+        .from(codebaseEmbeddings)
+        .where(eq(codebaseEmbeddings.repositoryId, repo.id))
+        .orderBy(sql`${similarity} DESC`)
+        .limit(5);
+
+        if (results.length > 0) {
+          codeContext = results.map(r => `FILE: ${r.filePath}\n${r.content}`).join("\n\n");
+        }
+      }
+
       // Generate AI response
       const aiResponse = await generateDiscoveryResponse({
         featureTitle: feature.title,
         featureDescription: feature.description,
         conversationHistory: history,
         userMessage: input.message,
+        codeContext,
       });
 
       // Save AI response

@@ -4,34 +4,28 @@ import { getDiscoveryModel } from "../index";
 const DISCOVERY_SYSTEM_PROMPT = `You are Indecode's Discovery Agent — an experienced Product Manager specializing in requirement gathering.
 
 Your job is to understand what the user wants to build by asking intelligent, focused follow-up questions. You are conversational, friendly, and thorough.
+Because you have access to the user's codebase context (provided as "Codebase Context"), you do NOT need to ask basic questions about the existing architecture unless it is ambiguous.
 
 ## Your Approach
 
-1. **Understand the intent**: Start by acknowledging the feature request and summarizing your understanding.
-2. **Ask clarifying questions**: Ask 2-3 focused questions at a time. Don't overwhelm the user.
-3. **Cover key areas**: Gradually cover these dimensions:
-   - **User personas**: Who will use this feature?
-   - **Core behavior**: What exactly should happen?
-   - **Edge cases**: What happens in error/unusual scenarios?
-   - **Acceptance criteria**: How do we know it works correctly?
-   - **Non-goals**: What is explicitly out of scope?
-   - **Dependencies**: Does this depend on other features or systems?
-4. **Summarize**: When you have enough context, offer to summarize the requirements.
+1. **Understand the intent**: Start by acknowledging the feature request and summarizing your understanding based on the codebase context.
+2. **Ask clarifying questions**: Ask 1-2 focused questions at a time. Don't overwhelm the user. Use the codebase context to ask highly technical, specific questions rather than generic ones.
+3. **DO NOT INFINITE LOOP**: Do NOT ask endless questions. The goal is to move fast. After 1 or 2 rounds of questions, or if the user says they are done, you MUST explicitly state that you have all the information you need and tell the user to click "Complete Discovery" or explicitly mark it complete.
+4. **Summarize**: When you have enough context, summarize the technical requirements concisely.
 
 ## Rules
 
 - Be concise. No fluff or filler.
-- Ask questions in bullet point format for clarity.
-- Don't generate code or technical specs — that's the PRD Agent's job.
-- If the user's response is vague, ask for specifics.
-- After 3-5 rounds of questions, check if the user is ready to finalize.
-- When the user says they're done or you have sufficient context, respond with a brief summary and suggest they click "Complete Discovery".`;
+- Use the provided Codebase Context to understand the existing project.
+- Do NOT ask questions if the codebase context already answers them.
+- If you have enough context, stop asking questions and explicitly say: "I have all the information I need. Please click 'Complete Discovery' to proceed."`;
 
 interface DiscoveryInput {
   featureTitle: string;
   featureDescription: string;
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
   userMessage?: string;
+  codeContext?: string;
 }
 
 /**
@@ -50,7 +44,6 @@ export async function generateInitialDiscoveryMessage(input: {
 **Description:** ${input.featureDescription}
 
 Please acknowledge the request, summarize your understanding, and ask your first round of clarifying questions.`,
-    maxTokens: 1000,
   });
 
   return result.text;
@@ -65,16 +58,22 @@ export async function generateDiscoveryResponse(input: DiscoveryInput): Promise<
     content: msg.content,
   }));
 
-  // Add the latest user message
   if (input.userMessage) {
     messages.push({ role: "user", content: input.userMessage });
   }
 
+  const system = `${DISCOVERY_SYSTEM_PROMPT}
+
+Context — Feature Request:
+- Title: ${input.featureTitle}
+- Description: ${input.featureDescription}
+
+${input.codeContext ? `Codebase Context (Vector RAG results based on conversation):\n${input.codeContext}` : ""}`;
+
   const result = await generateText({
     model: getDiscoveryModel(),
-    system: DISCOVERY_SYSTEM_PROMPT + `\n\nContext — Feature Request:\n- Title: ${input.featureTitle}\n- Description: ${input.featureDescription}`,
+    system,
     messages,
-    maxTokens: 1000,
   });
 
   return result.text;

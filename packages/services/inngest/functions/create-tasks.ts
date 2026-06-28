@@ -50,7 +50,7 @@ export const createTasksFunction = inngest.createFunction(
       if (generatedTasks.length === 0) return;
 
       await db.insert(tasks).values(
-        generatedTasks.map((t, index) => ({
+        generatedTasks.map((t: any, index: number) => ({
           featureRequestId,
           title: t.title,
           description: t.description,
