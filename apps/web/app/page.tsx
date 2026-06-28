@@ -14,18 +14,30 @@ function EarlyAccessButton() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setStatus("submitting");
-    setTimeout(() => {
-      setStatus("success");
-      setTimeout(() => {
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setStatus("success");
+        setTimeout(() => {
+          setStatus("idle");
+          setIsOpen(false);
+          setEmail("");
+        }, 2000);
+      } else {
         setStatus("idle");
-        setIsOpen(false);
-        setEmail("");
-      }, 2000);
-    }, 1000);
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("idle");
+    }
   };
 
   return (

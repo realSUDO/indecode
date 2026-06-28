@@ -90,7 +90,7 @@ export default function DashboardPage() {
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
+            {projects.map((project: any) => (
               <Link href={`/project/${project.id}/features`} key={project.id}>
                 <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
                   <CardHeader>

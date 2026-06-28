@@ -1,5 +1,5 @@
-indecode.in, www.indecode.in {
-	handle {
-		reverse_proxy indecode-web-1:3000
-	}
+indecode.in, www.indecode.in, in.indecode.in {
+        handle {
+                reverse_proxy indecode-web-1:3000
+        }
 }
