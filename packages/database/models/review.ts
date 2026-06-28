@@ -31,3 +31,20 @@ export const reviewIssues = pgTable("review_issues", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+import { relations } from "drizzle-orm";
+
+export const reviewsRelations = relations(reviews, ({ one, many }) => ({
+  pullRequest: one(pullRequests, {
+    fields: [reviews.pullRequestId],
+    references: [pullRequests.id],
+  }),
+  issues: many(reviewIssues),
+}));
+
+export const reviewIssuesRelations = relations(reviewIssues, ({ one }) => ({
+  review: one(reviews, {
+    fields: [reviewIssues.reviewId],
+    references: [reviews.id],
+  }),
+}));

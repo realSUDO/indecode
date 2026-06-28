@@ -18,3 +18,19 @@ export const pullRequests = pgTable("pull_requests", {
 }, (table) => [
   unique("repo_pr_unique").on(table.repositoryId, table.prNumber),
 ]);
+
+import { relations } from "drizzle-orm";
+import { reviews } from "./review";
+
+export const pullRequestsRelations = relations(pullRequests, ({ one, many }) => ({
+  repository: one(repositories, {
+    fields: [pullRequests.repositoryId],
+    references: [repositories.id],
+  }),
+  featureRequest: one(featureRequests, {
+    fields: [pullRequests.featureRequestId],
+    references: [featureRequests.id],
+  }),
+  reviews: many(reviews),
+}));
+

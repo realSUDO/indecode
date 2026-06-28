@@ -58,4 +58,58 @@ export const pullRequestRouter = router({
       if (!pr) throw new Error("PR not found");
       return pr;
     }),
+
+  getByFeatureId: publicProcedure
+    .input(z.object({ featureRequestId: z.string() }))
+    .query(async ({ input }) => {
+      const pr = await db.query.pullRequests.findFirst({
+        where: eq(pullRequests.featureRequestId, input.featureRequestId),
+        with: {
+          repository: true,
+          featureRequest: true,
+          reviews: {
+            orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
+            with: {
+              issues: true
+            }
+          }
+        }
+      });
+      return pr || null;
+    }),
+
+  merge: publicProcedure
+    .input(z.object({ pullRequestId: z.string(), commitMessage: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const { getInstallationOctokit } = require("@repo/services/github");
+      const { featureRequests } = require("@repo/database/schema");
+      
+      const pr = await db.query.pullRequests.findFirst({
+        where: eq(pullRequests.id, input.pullRequestId),
+        with: { repository: true }
+      });
+      if (!pr) throw new Error("PR not found");
+
+      const octokit = await getInstallationOctokit(pr.installationId);
+      const [owner, repo] = pr.repository.fullName.split("/");
+
+      await octokit.rest.pulls.merge({
+        owner,
+        repo,
+        pull_number: pr.prNumber,
+        commit_message: input.commitMessage || "Merged via Indecode",
+      });
+
+      await db.update(pullRequests)
+        .set({ status: "merged" })
+        .where(eq(pullRequests.id, pr.id));
+
+      if (pr.featureRequestId) {
+        await db.update(featureRequests)
+          .set({ status: "shipped" })
+          .where(eq(featureRequests.id, pr.featureRequestId));
+      }
+
+      return { success: true };
+    }),
 });

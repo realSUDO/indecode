@@ -91,9 +91,16 @@ Respond ONLY with a JSON array of file changes. Format:
       });
 
       try {
-        const jsonStr = result.text.replace(/```json|```/g, "").trim();
+        let jsonStr = result.text.trim();
+        const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+        } else {
+            jsonStr = jsonStr.replace(/```json|```/g, "").trim();
+        }
         return JSON.parse(jsonStr) as { path: string, content: string }[];
       } catch (e) {
+        console.error("Failed to parse file changes JSON:", result.text);
         return [];
       }
     });
