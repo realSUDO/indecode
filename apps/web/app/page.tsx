@@ -2,8 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useMotionTemplate, useMotionValue, useInView, useScroll, useTransform } from "motion/react";
-import { Github, Bot, Terminal, GitMerge, FileCode2, ArrowRight } from "lucide-react";
+import { motion, useMotionTemplate, useMotionValue, useInView, useScroll, useTransform, useMotionValueEvent } from "motion/react";
+import { Github, ArrowRight, Sun, Moon } from "lucide-react";
 import { PipelineAnimation } from "./pipeline";
 
 // ─── Interactive Early Access Button ────────────────────────────────────────
@@ -186,26 +186,142 @@ function RevealWord({ word, progress, index, total }: { word: string; progress: 
 // ─── Navbar ─────────────────────────────────────────────────────────────────
 
 function Navbar() {
+  const { scrollY } = useScroll();
+  const [clickCount, setClickCount] = useState(0);
+  const [isDark, setIsDark] = useState(true);
+
+  const btnColors = [
+    "bg-white text-black hover:bg-neutral-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]",
+    "bg-blue-100 text-blue-900 hover:bg-blue-200 shadow-none border border-blue-300/[0.5]",
+    "bg-red-100 text-red-900 hover:bg-red-200 shadow-none border border-red-300/[0.5]",
+    "bg-yellow-100 text-yellow-900 hover:bg-yellow-200 shadow-none border border-yellow-300/[0.5]",
+    "bg-green-100 text-green-900 hover:bg-green-200 shadow-none border border-green-300/[0.5]"
+  ];
+  const currentBtnColor = btnColors[clickCount % btnColors.length];
+
+  // Scroll progress from 0 to 1 over 400px
+  const progress = useTransform(scrollY, [0, 400], [0, 1]);
+  
+  const wrapperPad = useTransform(progress, (p) => `${p * 1.5}rem`);
+  
+  // Use CSS calc to seamlessly interpolate between 100% (100vw) and fixed 768px
+  const headerMaxWidth = useTransform(progress, (p) => `calc(100vw - (100vw - 768px) * ${p})`);
+  
+  const headerRadius = useTransform(progress, (p) => `${p * 9999}px`);
+  const headerBg = useTransform(progress, (p) => `rgba(23, 23, 23, ${p * 0.6})`);
+  const headerBorder = useTransform(progress, (p) => `rgba(255, 255, 255, ${p * 0.08})`);
+  const headerPadY = useTransform(progress, (p) => `${20 - p * 14}px`); // 20px to 6px
+  const headerPadX = useTransform(progress, (p) => `${48 - p * 42}px`); // 48px to 6px
+  const headerMarginTop = useTransform(progress, (p) => `${p * 24}px`); // 0 to 24px
+  
+  const logoPadLeft = useTransform(progress, (p) => `${p * 16}px`); // 0 to 16px
+  const logoPadRight = useTransform(progress, (p) => `${p * 24}px`); // 0 to 24px
+
   return (
-    <motion.header 
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="fixed top-0 inset-x-0 z-50 px-6 sm:px-12 py-5 flex justify-between items-center bg-black/50 backdrop-blur-xl border-b border-white/[0.04]"
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-7 h-7 bg-white text-black flex items-center justify-center rounded-[3px] text-xs font-bold">I</div>
-        <span className="text-lg font-semibold tracking-tight text-white">Indecode</span>
-      </div>
-      <div className="flex items-center gap-6">
-        <a href="https://github.com/just_multiply/Shipflow" target="_blank" rel="noreferrer" className="text-neutral-600 hover:text-white transition-colors">
-          <Github size={18} />
-        </a>
-        <Link href="/dashboard" className="px-5 py-2 rounded-full text-xs font-semibold bg-white text-black hover:bg-neutral-200 transition-colors">
-          Open App
-        </Link>
-      </div>
-    </motion.header>
+    <>
+      {/* Full-width gradient blur backdrop to softly blur content scrolling up */}
+      <div 
+        className="fixed inset-x-0 top-0 h-32 z-40 pointer-events-none backdrop-blur-[12px]"
+        style={{
+          WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+        }}
+      />
+
+      <motion.div 
+        style={{ paddingLeft: wrapperPad, paddingRight: wrapperPad }}
+        className="fixed inset-x-0 top-0 z-50 flex justify-center pointer-events-none"
+      >
+        <motion.header 
+        style={{ 
+          width: "100%",
+          maxWidth: headerMaxWidth,
+          borderRadius: headerRadius,
+          backgroundColor: headerBg,
+          borderColor: headerBorder,
+          paddingTop: headerPadY,
+          paddingBottom: headerPadY,
+          paddingLeft: headerPadX,
+          paddingRight: headerPadX,
+          marginTop: headerMarginTop,
+        }}
+        className="pointer-events-auto flex items-center justify-between backdrop-blur-2xl border border-solid shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
+      >
+        <motion.div 
+          style={{
+            paddingLeft: logoPadLeft,
+            paddingRight: logoPadRight,
+          }}
+          className="flex items-center gap-3"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 128 128"
+            fill="none"
+            className="flex-shrink-0"
+          >
+            {/* Left bracket */}
+            <path
+              d="M34 38 L14 64 L34 90"
+              stroke="white"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* i */}
+            <circle
+              cx="64"
+              cy="32"
+              r="6"
+              fill="white"
+            />
+            <line
+              x1="64"
+              y1="46"
+              x2="64"
+              y2="88"
+              stroke="white"
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            {/* Right bracket */}
+            <path
+              d="M94 38 L114 64 L94 90"
+              stroke="white"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-sm font-medium tracking-tight text-white">Indecode</span>
+        </motion.div>
+        
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center gap-8 px-4 text-xs font-medium text-neutral-400">
+          <a href="#" className="hover:text-white transition-colors">Platform</a>
+          <a href="#" className="hover:text-white transition-colors">Solutions</a>
+          <a href="#" className="hover:text-white transition-colors">Developers</a>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsDark(!isDark)}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/[0.08] text-neutral-400 hover:text-white transition-colors"
+          >
+            {isDark ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
+          <button 
+            onClick={() => setClickCount(prev => prev + 1)}
+            className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-105 ${currentBtnColor}`}
+          >
+            Coming Soon
+          </button>
+        </div>
+      </motion.header>
+      </motion.div>
+    </>
   );
 }
 
@@ -299,7 +415,7 @@ function PipelineSection() {
   }
 
   return (
-    <section ref={ref} onMouseMove={handleMouseMove} className="relative w-full min-h-[90vh] flex items-center py-24 md:py-32 overflow-hidden group [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
+    <section ref={ref} onMouseMove={handleMouseMove} className="relative w-full min-h-[90vh] flex items-center py-40 md:py-56 overflow-hidden group [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
       {/* Premium Technical Grid Background instead of flat grey */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] pointer-events-none" />
       
@@ -311,7 +427,7 @@ function PipelineSection() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-32">
         
         {/* Left: The Engine (Bleeding out slightly for dramatic effect) */}
         <motion.div
@@ -321,7 +437,7 @@ function PipelineSection() {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           className="w-full lg:w-[50%] flex justify-center lg:justify-start lg:-ml-12"
         >
-          <div className="relative w-full aspect-square max-w-[800px]">
+          <div className="relative w-full aspect-square max-w-[800px] lg:scale-[1.35] lg:-translate-x-16">
             <PipelineAnimation />
           </div>
         </motion.div>
@@ -332,9 +448,9 @@ function PipelineSection() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full lg:w-[45%]"
+          className="w-full lg:w-[38%] hidden lg:block"
         >
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white leading-[0.95] mb-6">
+          <h2 className="text-5xl md:text-7xl lg:text-[80px] font-bold tracking-tighter text-white leading-[0.95] mb-8">
             The Engine.
           </h2>
           <p className="text-neutral-500 text-base md:text-lg max-w-md leading-relaxed">
@@ -449,7 +565,7 @@ function AnimatedTerminal() {
 
 // ─── Bento Cards (glow effect preserved) ────────────────────────────────────
 
-function BentoCard({ title, desc, icon: Icon, className = "", delay = 0, children }: { title: string; desc: string; icon: any; className?: string; delay?: number; children?: React.ReactNode }) {
+function BentoCard({ title, desc, stepNumber, className = "", delay = 0, children }: { title: string; desc: string; stepNumber: string; className?: string; delay?: number; children?: React.ReactNode }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -487,14 +603,15 @@ function BentoCard({ title, desc, icon: Icon, className = "", delay = 0, childre
           maskImage: maskGradient
         }}
       >
-        <motion.div 
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          className="mb-6 w-12 h-12 rounded-xl border border-white/[0.08] bg-white/[0.02] flex items-center justify-center text-white/80 origin-center cursor-default backdrop-blur-md"
-        >
-          <Icon size={22} strokeWidth={1.5} />
-        </motion.div>
-        <h3 className="text-xl md:text-2xl font-semibold tracking-tight text-white mb-3 mt-auto">{title}</h3>
-        <p className="text-sm md:text-base text-neutral-400 leading-relaxed max-w-sm">{desc}</p>
+        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/40 flex items-center gap-3">
+          <div className="w-1 h-1 rounded-full bg-white/30" />
+          SYS.{stepNumber}
+        </div>
+        
+        <div className="mt-auto pt-8">
+          <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-white mb-4">{title}</h3>
+          <p className="text-base text-neutral-400 leading-relaxed max-w-sm">{desc}</p>
+        </div>
       </motion.div>
 
       {children && (
@@ -528,7 +645,7 @@ function BentoSection() {
           <BentoCard 
             title="RAG-Aware Context" 
             desc="Embeds your entire codebase into vectors. Agents understand your routing, schemas, and patterns before they write." 
-            icon={Bot}
+            stepNumber="01"
             className="md:col-span-8"
             delay={0.1}
             patternColor="bg-purple-500/20"
@@ -541,7 +658,7 @@ function BentoSection() {
           <BentoCard 
             title="Iterative PRs" 
             desc="Fast-forward commits on active branches. No overwritten work, just clean history." 
-            icon={GitMerge}
+            stepNumber="02"
             className="md:col-span-4"
             delay={0.2}
             patternColor="bg-emerald-500/20"
@@ -552,7 +669,7 @@ function BentoSection() {
           <BentoCard 
             title="Terminal Sandbox" 
             desc="Runs builds, linters, and tests in isolated containers to verify code before pushing." 
-            icon={Terminal}
+            stepNumber="03"
             className="md:col-span-5"
             delay={0.3}
             patternColor="bg-sky-500/20"
@@ -563,7 +680,7 @@ function BentoSection() {
           <BentoCard 
             title="Automated Audits" 
             desc="Line-by-line AI reviews catching security flaws, logic bugs, and architectural deviations natively." 
-            icon={FileCode2}
+            stepNumber="04"
             className="md:col-span-7"
             delay={0.4}
             patternColor="bg-orange-500/20"
@@ -608,10 +725,7 @@ function CTASection() {
 function Footer() {
   return (
     <footer className="py-10 text-center">
-      <div className="flex items-center justify-center gap-2 text-neutral-700 text-xs font-mono uppercase tracking-widest">
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 animate-pulse" />
-        Systems Operational
-      </div>
+      {/* Empty footer for spacing */}
     </footer>
   );
 }

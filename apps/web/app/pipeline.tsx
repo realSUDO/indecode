@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { Github, Lightbulb, FileText, ListTodo, Terminal, GitPullRequest, Eye, Rocket } from "lucide-react";
 
 const steps = [
-  { label: "Connect Repo" },
-  { label: "Feature Request" },
-  { label: "Generate PRD" },
-  { label: "Task List" },
-  { label: "Implement" },
-  { label: "Pull Request" },
-  { label: "Review" },
-  { label: "Merge & Ship" },
+  { label: "Connect Repo", icon: Github },
+  { label: "Feature Request", icon: Lightbulb },
+  { label: "Generate PRD", icon: FileText },
+  { label: "Task List", icon: ListTodo },
+  { label: "Implement", icon: Terminal },
+  { label: "Pull Request", icon: GitPullRequest },
+  { label: "Review", icon: Eye },
+  { label: "Merge & Ship", icon: Rocket },
 ];
 
 function CoreEngine() {
@@ -42,19 +43,19 @@ function CoreEngine() {
   );
 }
 
-function NodeIcon({ isActive, isCurrent }: { isActive: boolean; isCurrent: boolean }) {
+function NodeIcon({ isActive, isCurrent, icon: Icon }: { isActive: boolean; isCurrent: boolean; icon: any }) {
   return (
     <div className="relative flex items-center justify-center w-12 h-12">
       {/* Sleek outer ring, static unless active */}
       <div 
-        className={`absolute w-5 h-5 rounded-full border transition-all duration-500 ${
+        className={`absolute w-7 h-7 rounded-full border transition-all duration-500 ${
           isActive ? "border-white/40 delay-200" : "border-white/10 delay-0"
         }`}
       />
       
-      {/* Solid inner core when activated */}
+      {/* Icon core when activated */}
       <motion.div 
-        className="absolute w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+        className="absolute flex items-center justify-center"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ 
           scale: isActive ? 1 : 0, 
@@ -66,12 +67,14 @@ function NodeIcon({ isActive, isCurrent }: { isActive: boolean; isCurrent: boole
           bounce: 0.4,
           delay: isActive ? 0.2 : 0 
         }}
-      />
+      >
+        <Icon className="w-3.5 h-3.5 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" strokeWidth={2.5} />
+      </motion.div>
 
       {/* Ping ring when current */}
       {isCurrent && (
         <motion.div 
-          className="absolute w-5 h-5 rounded-full border border-white/40"
+          className="absolute w-7 h-7 rounded-full border border-white/40"
           animate={{ scale: [1, 2.2], opacity: [0.8, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut", delay: 0.2 }}
         />
@@ -98,7 +101,7 @@ export function PipelineAnimation() {
   const radius = 320; 
 
   return (
-    <div className="relative w-full h-full overflow-visible hidden md:block">
+    <div className="relative w-full h-full overflow-visible">
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
         {steps.map((_, i) => {
           const angle = (i * Math.PI * 2) / steps.length - Math.PI / 2;
@@ -180,9 +183,9 @@ export function PipelineAnimation() {
       </svg>
 
       {/* Central AI Core */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center max-sm:scale-50 max-md:scale-75">
         <CoreEngine />
-        <div className="mt-4 font-mono font-bold tracking-[0.2em] uppercase text-[10px] text-white/80 whitespace-nowrap">
+        <div className="mt-4 font-mono font-medium tracking-[0.15em] uppercase text-[16px] md:text-[10px] text-white/40 whitespace-nowrap">
           Indecode Engine
         </div>
       </div>
@@ -200,22 +203,19 @@ export function PipelineAnimation() {
         const labelIsBottom = Math.sin(angle) > 0.1;
 
         return (
-          <motion.div
+          <div
             key={idx}
-            className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2"
+            className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 max-sm:scale-50 max-md:scale-75"
             style={{ 
               left: `${(nodeX / 1000) * 100}%`, 
               top: `${(nodeY / 1000) * 100}%` 
             }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: idx * 0.1 }}
           >
-            <NodeIcon isActive={isActive} isCurrent={isCurrent} />
+            <NodeIcon isActive={isActive} isCurrent={isCurrent} icon={step.icon} />
 
             <div 
-              className={`absolute whitespace-nowrap text-[11px] tracking-widest font-mono uppercase transition-all duration-500 ${
-                labelIsTop ? "bottom-full mb-4" : labelIsBottom ? "top-full mt-4" : "mt-12"
+              className={`absolute whitespace-nowrap text-[16px] md:text-[11px] tracking-widest font-mono uppercase transition-all duration-500 ${
+                labelIsTop ? "bottom-full mb-6 md:mb-4" : labelIsBottom ? "top-full mt-6 md:mt-4" : "mt-16 md:mt-12"
               } ${
                 isActive ? "text-white/80 delay-200" : "text-white/20 delay-0"
               }`}
@@ -225,7 +225,7 @@ export function PipelineAnimation() {
             >
               {step.label}
             </div>
-          </motion.div>
+          </div>
         );
       })}
     </div>
