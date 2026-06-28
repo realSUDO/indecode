@@ -131,7 +131,7 @@ function HeroSection() {
   const textScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[110vh] flex items-center bg-black overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-[110vh] flex items-center bg-black overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]">
       {/* Background Interactive Canvas — parallax layer */}
       <motion.div
         style={{ y: canvasY }}
@@ -149,16 +149,15 @@ function HeroSection() {
         className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12"
       >
         <div className="flex flex-col items-start justify-center max-w-2xl">
-          <motion.h1
-            initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl md:text-7xl lg:text-[82px] font-bold tracking-tighter text-white leading-[0.95]"
-          >
-            From feature request
-            <br />
-            <span className="text-neutral-500">to merged PR.</span>
-          </motion.h1>
+          <h1 className="text-5xl md:text-7xl lg:text-[82px] font-bold tracking-tighter text-white leading-[0.95] flex flex-wrap gap-x-4">
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }} className="inline-block">From</motion.span>
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }} className="inline-block">feature</motion.span>
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }} className="inline-block">request</motion.span>
+            <div className="w-full h-0"></div>
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} className="inline-block text-neutral-500">to</motion.span>
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }} className="inline-block text-neutral-500">merged</motion.span>
+            <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.7, ease: [0.16, 1, 0.3, 1] }} className="inline-block text-neutral-500">PR.</motion.span>
+          </h1>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -193,10 +192,11 @@ function HeroSection() {
 
 function ManifestoSection() {
   return (
-    <section className="py-40 md:py-56 px-6 flex items-center justify-center">
+    <section className="py-40 md:py-56 px-6 flex items-center justify-center relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(255,255,255,0.03)_0%,transparent_100%)] pointer-events-none" />
       <ScrollRevealText
         text="I read your codebase. I understand your architecture. I generate a plan. I write the code. I run your tests. I open the PR. You review. You merge. That's it."
-        className="text-[clamp(1.4rem,3.5vw,2.5rem)] font-semibold tracking-tight leading-[1.35] text-white max-w-4xl text-center"
+        className="text-[clamp(1.4rem,3.5vw,2.5rem)] font-semibold tracking-tight leading-[1.35] text-white max-w-4xl text-center relative z-10"
       />
     </section>
   );
@@ -206,39 +206,57 @@ function ManifestoSection() {
 
 function PipelineSection() {
   const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "start 0.3"] });
-  const bgOpacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
 
   return (
-    <section ref={ref} className="relative w-full min-h-screen flex flex-col justify-center py-24 md:py-32 overflow-hidden">
-      {/* Grey bg revealed on scroll */}
-      <motion.div style={{ opacity: bgOpacity }} className="absolute inset-0 bg-[#0e0e0e]" />
+    <section ref={ref} onMouseMove={handleMouseMove} className="relative w-full min-h-[90vh] flex items-center py-24 md:py-32 overflow-hidden group [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
+      {/* Premium Technical Grid Background instead of flat grey */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] pointer-events-none" />
+      
+      {/* Interactive Glowing Grid Overlay */}
+      <motion.div 
+        className="absolute inset-0 bg-[linear-gradient(to_right,rgba(167,139,250,0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(167,139,250,0.2)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none opacity-0 group-hover:opacity-100 transition duration-500"
+        style={{
+          maskImage: useMotionTemplate`radial-gradient(350px circle at ${mouseX}px ${mouseY}px, black, transparent)`
+        }}
+      />
 
-      <div className="relative z-10 w-full">
-        {/* Title — left aligned */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-7xl mx-auto px-6 sm:px-12 mb-10"
-        >
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white leading-[0.95] mb-4">
-            The Engine.
-          </h2>
-          <p className="text-neutral-500 text-base md:text-lg max-w-lg leading-relaxed">
-            From the moment you request a feature, I manage the entire delivery lifecycle. Eight stages. Zero handoffs.
-          </p>
-        </motion.div>
-
-        {/* Pipeline — full width */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24">
+        
+        {/* Left: The Engine (Bleeding out slightly for dramatic effect) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="w-full lg:w-[50%] flex justify-center lg:justify-start lg:-ml-12"
         >
-          <PipelineAnimation />
+          <div className="relative w-full aspect-square max-w-[800px]">
+            <PipelineAnimation />
+          </div>
+        </motion.div>
+
+        {/* Right: The Text */}
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full lg:w-[45%]"
+        >
+          <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white leading-[0.95] mb-6">
+            The Engine.
+          </h2>
+          <p className="text-neutral-500 text-base md:text-lg max-w-md leading-relaxed">
+            From the moment you request a feature, I manage the entire delivery lifecycle. Eight stages. Zero handoffs.
+          </p>
         </motion.div>
       </div>
     </section>
@@ -254,6 +272,22 @@ function AnimatedTerminal() {
   const terminalScale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
   const terminalY = useTransform(scrollYProgress, [0, 1], [40, 0]);
 
+  // 3D Tilt physics
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-200, 200], [4, -4]);
+  const rotateY = useTransform(x, [-200, 200], [-4, 4]);
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set(e.clientX - (rect.left + rect.width / 2));
+    y.set(e.clientY - (rect.top + rect.height / 2));
+  }
+  function handleMouseLeave() {
+    x.set(0);
+    y.set(0);
+  }
+
   const lines = [
     { type: "cmd", text: "> indecode agent --feature 'implement oauth2'" },
     { type: "log", text: "[Info] Analyzing repository vector embeddings..." },
@@ -268,7 +302,7 @@ function AnimatedTerminal() {
   ];
 
   return (
-    <section ref={containerRef} className="py-32 md:py-44 bg-black relative overflow-hidden">
+    <section ref={containerRef} className="py-32 md:py-44 relative overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]">
       <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
         {/* Left — text */}
         <motion.div
@@ -286,11 +320,15 @@ function AnimatedTerminal() {
           </p>
         </motion.div>
 
-        {/* Right — terminal (scale up on scroll) */}
-        <motion.div
-          style={{ scale: terminalScale, y: terminalY }}
-          className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl shadow-black/60 font-mono text-sm leading-relaxed"
-        >
+        {/* Right — terminal (scale up on scroll + 3D hover) */}
+        <div style={{ perspective: 1200 }}>
+          <motion.div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{ scale: terminalScale, y: terminalY, rotateX, rotateY }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl shadow-black/60 font-mono text-sm leading-relaxed"
+          >
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05]">
             <div className="flex gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
@@ -303,10 +341,7 @@ function AnimatedTerminal() {
             {lines.map((line, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -8 }}
-                animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
-                transition={{ duration: 0.2, delay: 0.3 + (i * 0.35) }}
-                className={
+        className={
                   line.type === "cmd" ? "text-white font-medium mt-5 first:mt-0" :
                   line.type === "code" ? "text-green-400/80 pl-4 border-l-2 border-green-500/30" :
                   line.type === "success" ? "text-emerald-400 font-semibold mt-5" : "text-neutral-600"
@@ -322,7 +357,8 @@ function AnimatedTerminal() {
               className="w-2 h-4 bg-white mt-4"
             />
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -330,7 +366,7 @@ function AnimatedTerminal() {
 
 // ─── Bento Cards (glow effect preserved) ────────────────────────────────────
 
-function BentoCard({ title, desc, icon: Icon, className }: { title: string; desc: string; icon: any; className?: string }) {
+function BentoCard({ title, desc, icon: Icon, className = "", delay = 0, children }: { title: string; desc: string; icon: any; className?: string; delay?: number; children?: React.ReactNode }) {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -341,24 +377,31 @@ function BentoCard({ title, desc, icon: Icon, className }: { title: string; desc
   }
 
   return (
-    <div
-      className={`group relative rounded-2xl border border-white/[0.05] bg-neutral-950 overflow-hidden ${className}`}
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={`group relative rounded-3xl border border-white/[0.05] bg-neutral-950 overflow-hidden ${className}`}
       onMouseMove={handleMouseMove}
     >
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition duration-500 group-hover:opacity-100"
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition duration-500 group-hover:opacity-100 z-10"
         style={{
-          background: useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.08), transparent 80%)`,
+          background: useMotionTemplate`radial-gradient(500px circle at ${mouseX}px ${mouseY}px, rgba(167,139,250,0.12), transparent 80%)`,
         }}
       />
-      <div className="relative z-10 flex flex-col h-full p-8 md:p-10">
-        <div className="mb-5 w-10 h-10 rounded-lg border border-white/[0.08] bg-white/[0.02] flex items-center justify-center text-white/70">
+      <div className="relative z-20 flex flex-col h-full p-8 md:p-10">
+        <motion.div 
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          className="mb-5 w-10 h-10 rounded-lg border border-white/[0.08] bg-white/[0.02] flex items-center justify-center text-white/70 origin-center cursor-default"
+        >
           <Icon size={18} strokeWidth={1.5} />
-        </div>
+        </motion.div>
         <h3 className="text-lg font-semibold tracking-tight text-white mb-2 mt-auto">{title}</h3>
         <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -369,41 +412,60 @@ function BentoSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
 
   return (
-    <section ref={ref} className="py-32 md:py-44 bg-black">
+    <section ref={ref} className="py-32 md:py-48 relative overflow-hidden">
       <motion.div
         style={{ scale, opacity }}
-        className="max-w-7xl mx-auto px-6 sm:px-12 w-full"
+        className="max-w-7xl mx-auto px-6 sm:px-12 w-full relative z-10"
       >
-        <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-white mb-4">Architectural Advantages.</h2>
-          <p className="text-neutral-500 text-base md:text-lg max-w-xl mx-auto">Designed for software delivery, not generic chat.</p>
+        <div className="text-center mb-24">
+          <h2 className="text-4xl md:text-6xl font-semibold tracking-tighter text-white mb-6">Intelligence Architecture.</h2>
+          <p className="text-neutral-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">Engineered from the ground up to understand, build, and ship production software without human intervention.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[280px]">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[340px]">
+          
           <BentoCard 
             title="RAG-Aware Context" 
             desc="Embeds your entire codebase into vectors. Agents understand your routing, schemas, and patterns before they write." 
             icon={Bot}
-            className="md:col-span-2"
-          />
+            className="md:col-span-8"
+            delay={0.1}
+          >
+            <div className="absolute right-0 top-0 bottom-0 w-[60%] bg-[radial-gradient(ellipse_at_right,rgba(167,139,250,0.1),transparent_70%)] transition-opacity duration-700 group-hover:opacity-100 opacity-60" />
+            <div className="absolute -right-20 -top-20 w-[400px] h-[400px] border-[1px] border-white/[0.05] rounded-full [mask-image:linear-gradient(to_bottom_left,black,transparent)]" />
+            <div className="absolute -right-10 -top-10 w-[300px] h-[300px] border-[1px] border-white/[0.05] rounded-full [mask-image:linear-gradient(to_bottom_left,black,transparent)]" />
+          </BentoCard>
+
           <BentoCard 
             title="Iterative PRs" 
             desc="Fast-forward commits on active branches. No overwritten work, just clean history." 
             icon={GitMerge}
-            className="md:col-span-1"
-          />
+            className="md:col-span-4"
+            delay={0.2}
+          >
+             <div className="absolute bottom-0 right-0 left-0 h-1/2 bg-[linear-gradient(to_top,rgba(99,102,241,0.08),transparent)]" />
+          </BentoCard>
+
           <BentoCard 
-            title="Terminal Operations" 
-            desc="Sandbox access to run builds, linters, and tests to verify code before pushing." 
+            title="Terminal Sandbox" 
+            desc="Runs builds, linters, and tests in isolated containers to verify code before pushing." 
             icon={Terminal}
-            className="md:col-span-1"
-          />
+            className="md:col-span-5"
+            delay={0.3}
+          >
+             <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_60%_at_100%_100%,#000_10%,transparent_100%)]" />
+          </BentoCard>
+
           <BentoCard 
-            title="AI Code Review" 
-            desc="Line-by-line automated reviews catching security flaws, logic bugs, and architectural deviations." 
+            title="Automated Audits" 
+            desc="Line-by-line AI reviews catching security flaws, logic bugs, and architectural deviations natively." 
             icon={FileCode2}
-            className="md:col-span-2"
-          />
+            className="md:col-span-7"
+            delay={0.4}
+          >
+            <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/2 h-[200px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.1),transparent_70%)]" />
+          </BentoCard>
+
         </div>
       </motion.div>
     </section>
@@ -419,7 +481,7 @@ function CTASection() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
 
   return (
-    <section ref={ref} className="py-44 md:py-56 bg-black relative overflow-hidden">
+    <section ref={ref} className="py-44 md:py-56 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-white/[0.025] blur-[100px] rounded-full pointer-events-none" />
       <motion.div
         style={{ scale, opacity }}
@@ -444,7 +506,7 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="py-10 bg-black border-t border-white/[0.04] text-center">
+    <footer className="py-10 text-center">
       <div className="flex items-center justify-center gap-2 text-neutral-700 text-xs font-mono uppercase tracking-widest">
         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 animate-pulse" />
         Systems Operational
@@ -453,19 +515,93 @@ function Footer() {
   );
 }
 
+// ─── Space Particles ────────────────────────────────────────────────────────
+
+function SpaceParticles({ opacity }: { opacity: any }) {
+  const [stars, setStars] = useState<{ id: number; top: string; left: string; size: number; layer: number; opacity: number; twinkle: boolean }[]>([]);
+
+  useEffect(() => {
+    const arr = [];
+    // Scatter 150 particles across a single 100vh static viewport
+    for (let i = 0; i < 150; i++) {
+      arr.push({
+        id: i,
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        size: Math.random() > 0.85 ? 2 : 1,
+        layer: Math.random() > 0.7 ? 3 : Math.random() > 0.4 ? 2 : 1,
+        opacity: Math.random() * 0.5 + 0.1,
+        twinkle: Math.random() > 0.7
+      });
+    }
+    setStars(arr);
+  }, []);
+
+  return (
+    <motion.div style={{ opacity }} className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0">
+        {stars.filter(s => s.layer === 1).map(s => (
+          <div key={s.id} className={`absolute rounded-full bg-white ${s.twinkle ? 'animate-pulse' : ''}`} style={{ top: s.top, left: s.left, width: s.size, height: s.size, opacity: s.opacity }} />
+        ))}
+      </div>
+      <div className="absolute inset-0">
+        {stars.filter(s => s.layer === 2).map(s => (
+          <div key={s.id} className={`absolute rounded-full bg-white ${s.twinkle ? 'animate-pulse' : ''}`} style={{ top: s.top, left: s.left, width: s.size, height: s.size, opacity: s.opacity }} />
+        ))}
+      </div>
+      <div className="absolute inset-0">
+        {stars.filter(s => s.layer === 3).map(s => (
+          <div key={s.id} className={`absolute rounded-full bg-white blur-[0.5px] ${s.twinkle ? 'animate-pulse' : ''}`} style={{ top: s.top, left: s.left, width: s.size + 1, height: s.size + 1, opacity: s.opacity }} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const { scrollYProgress } = useScroll();
+  const auroraOpacity = useTransform(scrollYProgress, [0, 0.15], [0, 1]);
+
   return (
-    <div className="min-h-screen bg-black font-sans antialiased selection:bg-white selection:text-black overflow-x-hidden">
-      <Navbar />
-      <HeroSection />
-      <ManifestoSection />
-      <PipelineSection />
-      <AnimatedTerminal />
-      <BentoSection />
-      <CTASection />
-      <Footer />
+    <div className="min-h-screen bg-black font-sans antialiased selection:bg-white selection:text-black overflow-x-hidden relative">
+      
+      {/* 3D Parallax Starfield */}
+      <SpaceParticles opacity={auroraOpacity} />
+
+      {/* Ultra-Subtle Drifting Aurora */}
+      <motion.div style={{ opacity: auroraOpacity }} className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <motion.div 
+          animate={{
+            x: ["-10vw", "30vw", "50vw", "10vw", "-10vw"],
+            y: ["-10vh", "50vh", "90vh", "30vh", "-10vh"],
+          }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 left-0 w-[80vw] h-[80vw] rounded-full mix-blend-screen"
+          style={{ background: "radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 60%)" }}
+        />
+        <motion.div 
+          animate={{
+            x: ["50vw", "10vw", "-20vw", "40vw", "50vw"],
+            y: ["90vh", "30vh", "-10vh", "60vh", "90vh"],
+          }}
+          transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 left-0 w-[90vw] h-[90vw] rounded-full mix-blend-screen"
+          style={{ background: "radial-gradient(circle, rgba(167, 139, 250, 0.06) 0%, transparent 60%)" }}
+        />
+      </motion.div>
+
+      <div className="relative z-10">
+        <Navbar />
+        <HeroSection />
+        <ManifestoSection />
+        <PipelineSection />
+        <AnimatedTerminal />
+        <BentoSection />
+        <CTASection />
+        <Footer />
+      </div>
     </div>
   );
 }

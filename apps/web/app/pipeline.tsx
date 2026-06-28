@@ -101,13 +101,13 @@ export function PipelineAnimation() {
     return () => clearInterval(interval);
   }, []);
 
-  const centerX = 600;
-  const centerY = 300;
-  const radius = 240; // slightly wider to accommodate pure geometric vibe
+  const centerX = 500;
+  const centerY = 500;
+  const radius = 320; 
 
   return (
-    <div className="relative w-full max-w-6xl ml-auto h-[600px] overflow-visible hidden md:block">
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+    <div className="relative w-full h-full overflow-visible hidden md:block">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
         {steps.map((_, i) => {
           const angle = (i * Math.PI * 2) / steps.length - Math.PI / 2;
           const nodeX = centerX + Math.cos(angle) * radius;
@@ -212,8 +212,8 @@ export function PipelineAnimation() {
             key={idx}
             className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2"
             style={{ 
-              left: `${(nodeX / 1200) * 100}%`, 
-              top: `${(nodeY / 600) * 100}%` 
+              left: `${(nodeX / 1000) * 100}%`, 
+              top: `${(nodeY / 1000) * 100}%` 
             }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
