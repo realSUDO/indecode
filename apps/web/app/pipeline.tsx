@@ -16,35 +16,27 @@ const steps = [
 
 function CoreEngine() {
   return (
-    <div className="relative flex items-center justify-center w-36 h-36">
-      {/* Gyroscopic Ring 1 */}
+    <div className="relative flex items-center justify-center w-28 h-28">
+      {/* Outer slow ring */}
       <motion.div 
-        className="absolute inset-0 rounded-full border-[2px] border-white/10"
-        style={{ borderTopColor: "rgba(255,255,255,0.7)", borderBottomColor: "rgba(255,255,255,0.7)" }}
-        animate={{ rotateZ: 360, rotateX: 75, rotateY: 20 }}
-        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-0 rounded-full border border-white/5"
+        style={{ borderTopColor: "rgba(255,255,255,0.3)" }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
       />
-      {/* Gyroscopic Ring 2 */}
+      {/* Inner reverse ring */}
       <motion.div 
-        className="absolute inset-2 rounded-full border-[2px] border-white/10"
-        style={{ borderLeftColor: "rgba(255,255,255,0.7)", borderRightColor: "rgba(255,255,255,0.7)" }}
-        animate={{ rotateZ: -360, rotateX: 20, rotateY: 75 }}
-        transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
-      />
-      {/* Gyroscopic Ring 3 */}
-      <motion.div 
-        className="absolute inset-5 rounded-full border-[1px] border-white/30"
-        style={{ borderTopColor: "rgba(255,255,255,1)" }}
-        animate={{ rotateZ: 360, rotateX: 45, rotateY: 45 }}
-        transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-3 rounded-full border border-white/5"
+        style={{ borderBottomColor: "rgba(255,255,255,0.4)" }}
+        animate={{ rotate: -360 }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
       />
       
       {/* Inner Crystal Core */}
       <motion.div 
-        className="w-10 h-10 bg-white shadow-[0_0_60px_rgba(255,255,255,1)]"
-        style={{ rotate: 45 }}
-        animate={{ scale: [1, 1.25, 1], opacity: [0.8, 1, 0.8] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="w-5 h-5 bg-white rounded-full shadow-[0_0_30px_rgba(255,255,255,0.6)]"
+        animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   );
@@ -52,36 +44,36 @@ function CoreEngine() {
 
 function NodeIcon({ isActive, isCurrent }: { isActive: boolean; isCurrent: boolean }) {
   return (
-    <div className="relative flex items-center justify-center w-16 h-16">
-      {/* Hollow geometric frame */}
-      <motion.div 
-        className={`absolute w-5 h-5 border-[1.5px] border-white/30 transition-all duration-700 ${
-          isActive ? "border-white/80 shadow-[0_0_15px_rgba(255,255,255,0.5)]" : ""
+    <div className="relative flex items-center justify-center w-12 h-12">
+      {/* Sleek outer ring, static unless active */}
+      <div 
+        className={`absolute w-5 h-5 rounded-full border transition-all duration-500 ${
+          isActive ? "border-white/40 delay-200" : "border-white/10 delay-0"
         }`}
-        style={{ rotate: 45 }}
-        animate={isActive ? { rotate: [45, 135, 225, 315] } : { rotate: 45 }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
       />
       
       {/* Solid inner core when activated */}
       <motion.div 
-        className="absolute w-2.5 h-2.5 bg-white shadow-[0_0_20px_rgba(255,255,255,1)]"
-        style={{ rotate: 45 }}
+        className="absolute w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ 
           scale: isActive ? 1 : 0, 
           opacity: isActive ? 1 : 0 
         }}
-        transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
+        transition={{ 
+          duration: 0.4, 
+          type: "spring", 
+          bounce: 0.4,
+          delay: isActive ? 0.2 : 0 
+        }}
       />
 
       {/* Ping ring when current */}
       {isCurrent && (
         <motion.div 
-          className="absolute w-8 h-8 border border-white/50"
-          style={{ rotate: 45 }}
-          animate={{ scale: [1, 2.5], opacity: [0.8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+          className="absolute w-5 h-5 rounded-full border border-white/40"
+          animate={{ scale: [1, 2.2], opacity: [0.8, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut", delay: 0.2 }}
         />
       )}
     </div>
@@ -141,22 +133,22 @@ export function PipelineAnimation() {
               <path 
                 d={rayPath}
                 fill="none"
-                stroke="rgba(255,255,255,0.03)"
-                strokeWidth="1.5"
+                stroke="rgba(255,255,255,0.05)"
+                strokeWidth="1"
                 strokeDasharray="4 4"
               />
               <motion.path 
                 d={rayPath}
                 fill="none"
                 stroke="white"
-                strokeWidth="2.5"
+                strokeWidth="1.5"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ 
                   pathLength: isDrawingRay ? [0, 1] : 0, 
                   opacity: isDrawingRay ? [0, 1, 0] : 0 
                 }}
                 transition={{ 
-                  duration: 0.4,
+                  duration: 0.3,
                   ease: "easeOut"
                 }}
               />
@@ -170,15 +162,15 @@ export function PipelineAnimation() {
               <motion.path 
                 d={arcPath}
                 fill="none"
-                stroke="rgba(255,255,255,0.5)"
-                strokeWidth="2"
+                stroke="rgba(255,255,255,0.4)"
+                strokeWidth="1.5"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ 
                   pathLength: isDrawingArc ? 1 : 0, 
                   opacity: isDrawingArc ? 1 : 0 
                 }}
                 transition={{ 
-                  duration: 1.5,
+                  duration: 1.2,
                   ease: "linear"
                 }}
               />
@@ -222,13 +214,13 @@ export function PipelineAnimation() {
             <NodeIcon isActive={isActive} isCurrent={isCurrent} />
 
             <div 
-              className={`absolute whitespace-nowrap text-[12px] tracking-widest font-mono uppercase transition-all duration-500 ${
-                labelIsTop ? "bottom-full mb-6" : labelIsBottom ? "top-full mt-6" : "mt-16"
+              className={`absolute whitespace-nowrap text-[11px] tracking-widest font-mono uppercase transition-all duration-500 ${
+                labelIsTop ? "bottom-full mb-4" : labelIsBottom ? "top-full mt-4" : "mt-12"
               } ${
-                isActive ? "text-white" : "text-neutral-600 opacity-40"
+                isActive ? "text-white/80 delay-200" : "text-white/20 delay-0"
               }`}
               style={{
-                ...(Math.abs(Math.sin(angle)) <= 0.1 && { top: '35px' })
+                ...(Math.abs(Math.sin(angle)) <= 0.1 && { top: '25px' })
               }}
             >
               {step.label}
