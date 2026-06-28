@@ -6,6 +6,95 @@ import { motion, useMotionTemplate, useMotionValue, useInView, useScroll, useTra
 import { Github, Bot, Terminal, GitMerge, FileCode2, ArrowRight } from "lucide-react";
 import { PipelineAnimation } from "./pipeline";
 
+// ─── Interactive Early Access Button ────────────────────────────────────────
+
+function EarlyAccessButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("submitting");
+    setTimeout(() => {
+      setStatus("success");
+      setTimeout(() => {
+        setStatus("idle");
+        setIsOpen(false);
+        setEmail("");
+      }, 2000);
+    }, 1000);
+  };
+
+  return (
+    <motion.div 
+      initial={false}
+      animate={{ width: isOpen ? 340 : 160 }}
+      transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+      className="relative p-[1.5px] rounded-full overflow-hidden shadow-[0_0_25px_rgba(255,255,255,0.05)] group"
+    >
+      {/* Premium Sweeping Rainbow Border */}
+      {/* Moving Rainbow Border Layer */}
+      <div 
+        className="absolute left-1/2 top-1/2 w-[600px] h-[600px] bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)]" 
+        style={{
+          animation: "spin-smooth 4s linear infinite, pulse-fade 8s linear infinite"
+        }}
+      />
+      
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes spin-smooth {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes pulse-fade {
+          0%, 75% { opacity: 0.8; }
+          80% { opacity: 0; }
+          90% { opacity: 0; }
+          95%, 100% { opacity: 0.8; }
+        }
+      `}} />
+      
+      <form 
+        onSubmit={handleSubmit}
+        className="relative w-full flex items-center h-[52px] bg-neutral-950 rounded-full overflow-hidden"
+      >
+        <input 
+          ref={inputRef}
+          type="email" 
+          placeholder="Enter your email..." 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="absolute left-0 w-[220px] h-full bg-transparent pl-5 pr-2 text-sm text-white placeholder:text-neutral-500 outline-none"
+          style={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? 'auto' : 'none', transition: 'opacity 0.3s ease 0.1s' }}
+        />
+        <motion.button
+          type={isOpen ? "submit" : "button"}
+          onClick={(e) => {
+            if (!isOpen) {
+              e.preventDefault();
+              setIsOpen(true);
+              setTimeout(() => inputRef.current?.focus(), 100);
+            }
+          }}
+          disabled={status === "submitting" || status === "success"}
+          animate={{ width: isOpen ? 100 : "100%" }}
+          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+          className="absolute right-0 top-0 bottom-0 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-neutral-200 transition-colors z-10 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+        >
+          <span className="flex items-center gap-2">
+            {status === "success" ? "Added" : status === "submitting" ? "..." : isOpen ? "Join" : "Early access"}
+            {status === "idle" && !isOpen && <ArrowRight size={16} />}
+          </span>
+        </motion.button>
+      </form>
+    </motion.div>
+  );
+}
+
 // ─── Dark Matter Canvas ─────────────────────────────────────────────────────
 
 function InteractiveCanvas() {
@@ -172,15 +261,9 @@ function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9 }}
-            className="mt-10 flex items-center gap-5"
+            className="mt-10 flex flex-col md:flex-row items-center gap-5"
           >
-            <Link
-              href="/dashboard"
-              className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black text-sm font-semibold transition-all hover:scale-[1.03] shadow-[0_0_25px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
-            >
-              Deploy your AI Engineer
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <EarlyAccessButton />
           </motion.div>
         </div>
       </motion.div>
@@ -367,8 +450,12 @@ function AnimatedTerminal() {
 // ─── Bento Cards (glow effect preserved) ────────────────────────────────────
 
 function BentoCard({ title, desc, icon: Icon, className = "", delay = 0, children }: { title: string; desc: string; icon: any; className?: string; delay?: number; children?: React.ReactNode }) {
+  const [isRevealed, setIsRevealed] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  
+  const backgroundGradient = useMotionTemplate`radial-gradient(500px circle at ${mouseX}px ${mouseY}px, rgba(167,139,250,0.12), transparent 80%)`;
+  const maskGradient = useMotionTemplate`radial-gradient(250px circle at ${mouseX}px ${mouseY}px, black 20%, transparent 80%)`;
 
   function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
     const { left, top } = currentTarget.getBoundingClientRect();
@@ -382,25 +469,39 @@ function BentoCard({ title, desc, icon: Icon, className = "", delay = 0, childre
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative rounded-3xl border border-white/[0.05] bg-neutral-950 overflow-hidden ${className}`}
+      className={`group relative rounded-3xl border transition-colors duration-500 overflow-hidden cursor-pointer ${isRevealed ? "border-white/[0.2] bg-neutral-900" : "border-white/[0.05] bg-neutral-950"} ${className}`}
+      onClick={() => setIsRevealed(!isRevealed)}
       onMouseMove={handleMouseMove}
     >
+      {/* Background glow layer */}
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition duration-500 group-hover:opacity-100 z-10"
-        style={{
-          background: useMotionTemplate`radial-gradient(500px circle at ${mouseX}px ${mouseY}px, rgba(167,139,250,0.12), transparent 80%)`,
-        }}
+        className={`pointer-events-none absolute -inset-px rounded-3xl transition duration-500 z-10 ${isRevealed ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+        style={isRevealed ? { background: "radial-gradient(800px circle at center, rgba(255,255,255,0.06), transparent 80%)" } : { background: backgroundGradient }}
       />
-      <div className="relative z-20 flex flex-col h-full p-8 md:p-10">
+      
+      {/* The Content */}
+      <motion.div 
+        className={`relative z-20 flex flex-col h-full p-8 md:p-10 transition-opacity duration-500 ${isRevealed ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+        style={isRevealed ? { WebkitMaskImage: "none", maskImage: "none" } : {
+          WebkitMaskImage: maskGradient,
+          maskImage: maskGradient
+        }}
+      >
         <motion.div 
           whileHover={{ scale: 1.1, rotate: 5 }}
-          className="mb-5 w-10 h-10 rounded-lg border border-white/[0.08] bg-white/[0.02] flex items-center justify-center text-white/70 origin-center cursor-default"
+          className="mb-6 w-12 h-12 rounded-xl border border-white/[0.08] bg-white/[0.02] flex items-center justify-center text-white/80 origin-center cursor-default backdrop-blur-md"
         >
-          <Icon size={18} strokeWidth={1.5} />
+          <Icon size={22} strokeWidth={1.5} />
         </motion.div>
-        <h3 className="text-lg font-semibold tracking-tight text-white mb-2 mt-auto">{title}</h3>
-        <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
-      </div>
+        <h3 className="text-xl md:text-2xl font-semibold tracking-tight text-white mb-3 mt-auto">{title}</h3>
+        <p className="text-sm md:text-base text-neutral-400 leading-relaxed max-w-sm">{desc}</p>
+      </motion.div>
+
+      {children && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {children}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -430,6 +531,7 @@ function BentoSection() {
             icon={Bot}
             className="md:col-span-8"
             delay={0.1}
+            patternColor="bg-purple-500/20"
           >
             <div className="absolute right-0 top-0 bottom-0 w-[60%] bg-[radial-gradient(ellipse_at_right,rgba(167,139,250,0.1),transparent_70%)] transition-opacity duration-700 group-hover:opacity-100 opacity-60" />
             <div className="absolute -right-20 -top-20 w-[400px] h-[400px] border-[1px] border-white/[0.05] rounded-full [mask-image:linear-gradient(to_bottom_left,black,transparent)]" />
@@ -442,6 +544,7 @@ function BentoSection() {
             icon={GitMerge}
             className="md:col-span-4"
             delay={0.2}
+            patternColor="bg-emerald-500/20"
           >
              <div className="absolute bottom-0 right-0 left-0 h-1/2 bg-[linear-gradient(to_top,rgba(99,102,241,0.08),transparent)]" />
           </BentoCard>
@@ -452,6 +555,7 @@ function BentoSection() {
             icon={Terminal}
             className="md:col-span-5"
             delay={0.3}
+            patternColor="bg-sky-500/20"
           >
              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_60%_at_100%_100%,#000_10%,transparent_100%)]" />
           </BentoCard>
@@ -462,6 +566,7 @@ function BentoSection() {
             icon={FileCode2}
             className="md:col-span-7"
             delay={0.4}
+            patternColor="bg-orange-500/20"
           >
             <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/2 h-[200px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.1),transparent_70%)]" />
           </BentoCard>
@@ -490,13 +595,9 @@ function CTASection() {
         <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.95]">
           Start building faster.
         </h2>
-        <Link
-          href="/dashboard"
-          className="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-black font-semibold text-base overflow-hidden transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,255,255,0.12)]"
-        >
-          <span>Deploy Indecode</span>
-          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-        </Link>
+        <div className="flex justify-center">
+          <EarlyAccessButton />
+        </div>
       </motion.div>
     </section>
   );
