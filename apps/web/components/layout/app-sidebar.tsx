@@ -68,7 +68,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {projects?.map((project) => (
+              {projects?.map((project: any) => (
                 <SidebarMenuItem key={project.id}>
                   <SidebarMenuButton asChild tooltip={project.name}>
                     <Link href={`/project/${project.id}/features`}>

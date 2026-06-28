@@ -138,8 +138,8 @@ export default function FeatureDetailPage() {
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white">{feature.title}</h1>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyle?.bg} ${statusStyle?.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusStyle?.dot}`} />
                 {STATUS_LABELS[feature.status] ?? feature.status}
               </span>
             </div>
@@ -195,14 +195,14 @@ export default function FeatureDetailPage() {
           <div>
             <h3 className="text-white font-medium">Continue your workflow</h3>
             <p className="text-gray-500 text-sm mt-1">
-              {{
+              {({
                 submitted: "Start chatting with the AI PM to gather requirements.",
                 discovery: "The AI PM is ready for your next message.",
                 prd_draft: "Your PRD is ready to review, edit, and approve.",
                 prd_approved: "Tasks are being generated on the Kanban board.",
                 planning: "AI is generating engineering tasks...",
                 in_progress: "Your Kanban board is ready.",
-              }[feature.status] ?? "Continue your workflow."}
+              } as Record<string, string>)[feature.status as string] ?? "Continue your workflow."}
             </p>
           </div>
           <button

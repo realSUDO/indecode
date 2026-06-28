@@ -56,7 +56,7 @@ export function RepoList({ projectId }: { projectId: string }) {
 
   // Filter out repos that are already connected
   const availableRepos = allGithubRepos?.filter(
-    githubRepo => !connectedRepos?.some(connected => connected.fullName === githubRepo.fullName)
+    (githubRepo: any) => !connectedRepos?.some((connected: any) => connected.fullName === githubRepo.fullName)
   );
 
   if (isLoading) {
@@ -97,7 +97,7 @@ export function RepoList({ projectId }: { projectId: string }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {connectedRepos?.map(repo => (
+              {connectedRepos?.map((repo: any) => (
                 <div key={repo.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card rounded-lg border border-border/60 hover:border-border transition-colors gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-500/10 text-indigo-500 rounded-md">
@@ -172,7 +172,7 @@ export function RepoList({ projectId }: { projectId: string }) {
             </div>
           ) : (
             <div className="space-y-4">
-              {availableRepos?.map((repo) => (
+              {availableRepos?.map((repo: any) => (
                 <div 
                   key={repo.id} 
                   className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"

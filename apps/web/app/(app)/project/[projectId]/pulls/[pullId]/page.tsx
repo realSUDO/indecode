@@ -61,7 +61,7 @@ export default function PullRequestDetailPage() {
               {latestReview.issues && latestReview.issues.length > 0 ? (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg">Identified Issues</h3>
-                  {latestReview.issues.map((issue) => (
+                  {latestReview.issues.map((issue: any) => (
                     <div key={issue.id} className="p-4 rounded-lg border bg-card">
                       <div className="flex items-center gap-2 mb-2">
                         {issue.severity === "blocking" && <AlertCircle className="w-4 h-4 text-destructive" />}

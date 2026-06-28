@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@openrouter/ai-sdk-provider": "^2.10.0",
+    "@repo/database": "workspace:*",
     "@repo/services": "workspace:*",
+    "drizzle-orm": "^0.45.1",
     "@trpc/client": "^11.8.1",
     "@trpc/server": "^11.8.1",
     "ai": "^7.0.2",

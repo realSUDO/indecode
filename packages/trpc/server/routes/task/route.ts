@@ -41,6 +41,7 @@ export const taskRouter = router({
         .set(updates)
         .where(eq(tasks.id, taskId))
         .returning();
+      if (!updated) throw new Error("Task not found");
 
       return { id: updated.id, status: updated.status, title: updated.title };
     }),

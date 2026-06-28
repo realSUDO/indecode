@@ -77,7 +77,7 @@ export default function FeaturesListPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {features.map((feature) => (
+          {features.map((feature: any) => (
             <Card
               key={feature.id}
               className="cursor-pointer hover:bg-accent/50 transition-colors"

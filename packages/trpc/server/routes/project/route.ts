@@ -17,9 +17,11 @@ export const projectRouter = router({
       if (!user) {
         const { users } = await import("@repo/database/schema");
         [user] = await db.insert(users).values({
+          id: "system-user-id",
           name: "System User",
           email: "system@indecode.local",
         }).returning();
+        if (!user) throw new Error("Failed to create system user");
       }
       
       const userId = user.id;
@@ -30,6 +32,7 @@ export const projectRouter = router({
         userId: input.organizationId ? undefined : userId,
         organizationId: input.organizationId,
       }).returning();
+      if (!newProject) throw new Error("Failed to create project");
 
       return {
         id: newProject.id,

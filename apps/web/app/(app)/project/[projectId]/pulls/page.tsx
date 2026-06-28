@@ -42,7 +42,7 @@ export default function PullRequestsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {pullRequests.map((pr) => (
+              {pullRequests.map((pr: any) => (
                 <Link key={pr.id} href={`/project/${projectId}/pulls/${pr.id}`}>
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group mb-2">
                     <div className="flex items-center gap-3">

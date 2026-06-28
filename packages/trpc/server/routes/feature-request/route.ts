@@ -25,7 +25,7 @@ export const featureRequestRouter = router({
           }).returning();
         }
         
-        const createdById = user.id;
+        const createdById = user!.id;
 
         const [newFeature] = await db.insert(featureRequests).values({
           projectId: input.projectId,
@@ -34,6 +34,7 @@ export const featureRequestRouter = router({
           source: input.source,
           createdById,
         }).returning();
+        if (!newFeature) throw new Error("Failed to create feature request");
 
         // Trigger Inngest event to create discovery session
         await inngest.send({
@@ -118,6 +119,7 @@ export const featureRequestRouter = router({
         .set({ status: input.status })
         .where(eq(featureRequests.id, input.featureRequestId))
         .returning();
+      if (!updated) throw new Error("Feature request not found");
 
       return { id: updated.id, status: updated.status };
     }),

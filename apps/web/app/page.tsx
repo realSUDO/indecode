@@ -566,7 +566,7 @@ function AnimatedTerminal() {
 
 // ─── Bento Cards (glow effect preserved) ────────────────────────────────────
 
-function BentoCard({ title, desc, stepNumber, className = "", delay = 0, children }: { title: string; desc: string; stepNumber: string; className?: string; delay?: number; children?: React.ReactNode }) {
+function BentoCard({ title, desc, stepNumber, className = "", delay = 0, patternColor, children }: { title: string; desc: string; stepNumber: string; className?: string; delay?: number; patternColor?: string; children?: React.ReactNode }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);

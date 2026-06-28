@@ -9,6 +9,7 @@ import {
   reviewPullRequest
 } from "@repo/services/inngest";
 
+// @ts-ignore
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
@@ -18,6 +19,5 @@ export const { GET, POST, PUT } = serve({
     syncRepoCodebase,
     implementFeatureFunction,
     reviewPullRequest,
-  ],
-  isDev: true,
+  ]
 });

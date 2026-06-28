@@ -155,7 +155,7 @@ export default function DiscoveryPage() {
           </div>
         )}
 
-        {session.messages.map((msg) => (
+        {session.messages.map((msg: any) => (
           <div key={msg.id} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
               msg.role === "user" ? "bg-blue-500/10" : "bg-primary/10"

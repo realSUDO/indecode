@@ -113,6 +113,7 @@ export const discoveryRouter = router({
         role: "user",
         content: input.message,
       }).returning();
+      if (!userMsg) throw new Error("Failed to save user message");
 
       // Build conversation history
       const history = session.messages.map(m => ({
@@ -160,6 +161,7 @@ export const discoveryRouter = router({
         role: "assistant",
         content: aiResponse,
       }).returning();
+      if (!aiMsg) throw new Error("Failed to save AI message");
 
       return {
         userMessageId: userMsg.id,

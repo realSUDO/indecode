@@ -47,6 +47,7 @@ export const prdRouter = router({
         })
         .where(eq(prds.id, input.prdId))
         .returning();
+      if (!updated) throw new Error("Failed to update PRD");
 
       return { id: updated.id, version: updated.version };
     }),
@@ -63,6 +64,7 @@ export const prdRouter = router({
         .set({ status: "approved", approvedAt: new Date() })
         .where(eq(prds.id, input.prdId))
         .returning();
+      if (!updated) throw new Error("Failed to approve PRD");
 
       // Update feature request status
       await db.update(featureRequests)
@@ -85,6 +87,7 @@ export const prdRouter = router({
         .set({ status: "rejected" })
         .where(eq(prds.id, input.prdId))
         .returning();
+      if (!updated) throw new Error("Failed to reject PRD");
 
       return { id: updated.id, status: updated.status };
     }),

@@ -76,6 +76,7 @@ export const githubRouter = router({
         githubInstallationId: installation.id,
         fullName: input.repoFullName,
       }).returning();
+      if (!newRepo) throw new Error("Failed to connect repository");
 
       return {
         id: newRepo.id,

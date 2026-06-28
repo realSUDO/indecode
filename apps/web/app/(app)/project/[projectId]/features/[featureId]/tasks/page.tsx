@@ -173,7 +173,7 @@ export default function TasksPage() {
   };
 
   const handleStatusChange = (taskId: string, status: Status) => {
-    const task = taskList?.find(t => t.id === taskId);
+    const task = taskList?.find((t: any) => t.id === taskId);
     if (!task) return;
     reorderMutation.mutate({ taskId, newSortOrder: task.sortOrder, newStatus: status });
   };
@@ -190,7 +190,7 @@ export default function TasksPage() {
   }
 
   const tasksByStatus = COLUMNS.reduce((acc, col) => {
-    acc[col.id] = (taskList ?? []).filter(t => t.status === col.id);
+    acc[col.id] = (taskList ?? []).filter((t: any) => t.status === col.id);
     return acc;
   }, {} as Record<Status, Task[]>);
 
