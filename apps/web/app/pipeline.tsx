@@ -46,9 +46,6 @@ function CoreEngine() {
         animate={{ scale: [1, 1.25, 1], opacity: [0.8, 1, 0.8] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      
-      {/* Ambient Engine Glow */}
-      <div className="absolute inset-[-20px] bg-white/5 blur-3xl rounded-full" />
     </div>
   );
 }
@@ -109,18 +106,8 @@ export function PipelineAnimation() {
   const radius = 240; // slightly wider to accommodate pure geometric vibe
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto h-[600px] mt-8 overflow-visible hidden md:block">
+    <div className="relative w-full max-w-6xl ml-auto h-[600px] overflow-visible hidden md:block">
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <filter id="core-glow">
-            <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-
         {steps.map((_, i) => {
           const angle = (i * Math.PI * 2) / steps.length - Math.PI / 2;
           const nodeX = centerX + Math.cos(angle) * radius;
@@ -163,7 +150,6 @@ export function PipelineAnimation() {
                 fill="none"
                 stroke="white"
                 strokeWidth="2.5"
-                filter="url(#core-glow)"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ 
                   pathLength: isDrawingRay ? [0, 1] : 0, 
@@ -186,7 +172,6 @@ export function PipelineAnimation() {
                 fill="none"
                 stroke="rgba(255,255,255,0.5)"
                 strokeWidth="2"
-                filter="url(#core-glow)"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ 
                   pathLength: isDrawingArc ? 1 : 0, 
