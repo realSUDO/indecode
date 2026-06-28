@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useMotionTemplate, useMotionValue, useInView } from "motion/react";
 import { Github, Bot, Sparkles, Terminal, GitMerge, FileCode2, ArrowRight } from "lucide-react";
+import { PipelineAnimation } from "./pipeline";
 
 // --- Hooks & Utilities ---
 
@@ -168,7 +169,7 @@ function Navbar() {
 
 function HeroSection() {
   return (
-    <section className="relative pt-40 pb-32 min-h-screen flex items-center bg-black overflow-hidden">
+    <section className="relative pt-40 pb-32 min-h-screen flex items-center bg-black overflow-hidden snap-start">
       {/* Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0" />
 
@@ -189,32 +190,34 @@ function HeroSection() {
         <motion.div 
           className="flex flex-col items-start justify-center max-w-2xl"
         >
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-neutral-400 text-xs font-medium mb-8 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-neutral-400 text-[10px] font-mono uppercase tracking-widest mb-8 backdrop-blur-md"
           >
-            <Sparkles size={14} className="text-white" /> The Autonomous AI Pipeline
+            <Sparkles size={14} className="text-white" /> AI-Native Software Delivery
           </motion.div>
 
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.4 }}
-            className="text-5xl md:text-7xl lg:text-[90px] font-medium tracking-tighter text-white leading-[0.95] text-left"
+            className="text-5xl md:text-7xl lg:text-[80px] font-medium tracking-tighter text-white leading-[1.0] text-left"
           >
-            The speed of <span className="text-neutral-600">thought.</span><br/>
-            Execution of a <span className="text-neutral-600">machine.</span>
+            From Feature Request to<br/>
+            <span className="text-neutral-500">Merged Pull Request.</span>
           </motion.h1>
 
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="mt-8 text-lg text-neutral-500 max-w-md font-light tracking-wide text-left"
+            className="mt-8 text-lg text-neutral-400 max-w-2xl font-light tracking-wide text-left"
           >
-            Indecode reads your repository, plans features, and writes pull requests. You are no longer the typist. You are the architect.
+            Indecode isn't just an autocomplete tool. It reads your repository,
+generates PRDs, creates tasks, and writes merge-ready pull requests autonomously
+. You are no longer the typist. You are the architect.
           </motion.p>
 
           <motion.div
@@ -223,22 +226,42 @@ function HeroSection() {
             transition={{ duration: 1, delay: 1 }}
             className="mt-10 flex items-center gap-6"
           >
-            <Link 
+            <Link
               href="/dashboard"
               className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-white text-black font-semibold overflow-hidden transition-transform hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.25)]"
             >
-              <span className="relative z-10">Start Building</span>
+              <span className="relative z-10 text-sm">Deploy your AI Engineer</span>
               <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link 
-              href="#terminal"
-              className="text-neutral-400 hover:text-white transition-colors font-medium text-sm"
-            >
-              See how it works &rarr;
             </Link>
           </motion.div>
         </motion.div>
+
       </div>
+    </section>
+  );
+}
+
+function PipelineSection() {
+  return (
+    <section className="relative w-full min-h-screen flex flex-col justify-center bg-black py-20 border-t border-white/[0.05] overflow-hidden snap-start">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+      <motion.div 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: false, amount: 0.2 }}
+        className="relative z-10 w-full"
+      >
+        <div className="w-full max-w-7xl mx-auto px-6 text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-medium tracking-tight text-white">
+            The Autonomous Workflow
+          </h2>
+          <p className="mt-4 text-neutral-500 font-light max-w-2xl mx-auto">
+            From the moment a feature is requested, Indecode manages the entire delivery lifecycle. Watch the pipeline in action.
+          </p>
+        </div>
+        <PipelineAnimation />
+      </motion.div>
     </section>
   );
 }
@@ -261,8 +284,14 @@ function AnimatedTerminal() {
   ];
 
   return (
-    <section className="py-40 bg-black relative border-t border-white/[0.05]" ref={containerRef}>
-      <div className="max-w-5xl mx-auto px-6">
+    <section className="py-40 min-h-screen flex flex-col justify-center bg-black relative border-t border-white/[0.05] snap-start" ref={containerRef}>
+      <motion.div 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: false, amount: 0.2 }}
+        className="max-w-5xl mx-auto w-full px-6"
+      >
         <div className="text-center mb-20">
           <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white mb-6">Built for execution.</h2>
           <p className="text-neutral-500 text-lg max-w-xl mx-auto">No chat UI. No context switching. A raw pipeline that turns human language directly into merged code.</p>
@@ -309,7 +338,7 @@ function AnimatedTerminal() {
             />
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 }
@@ -355,8 +384,14 @@ function BentoCard({ title, desc, icon: Icon, className }: { title: string, desc
 
 function BentoSection() {
   return (
-    <section className="py-40 bg-black">
-      <div className="max-w-7xl mx-auto px-6 sm:px-12">
+    <section className="py-40 min-h-screen flex flex-col justify-center bg-black snap-start">
+      <motion.div 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: false, amount: 0.2 }}
+        className="max-w-7xl mx-auto px-6 sm:px-12 w-full"
+      >
         <div className="text-center mb-24">
           <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white mb-6">Architectural Advantages.</h2>
           <p className="text-neutral-500 text-lg max-w-xl mx-auto">Designed from the ground up for software delivery, not generic chat.</p>
@@ -388,22 +423,28 @@ function BentoSection() {
             className="md:col-span-2"
           />
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
 
 function CTASection() {
   return (
-    <section className="py-40 bg-black relative border-t border-white/[0.05] overflow-hidden">
+    <section className="py-40 min-h-screen flex flex-col justify-center bg-black relative border-t border-white/[0.05] overflow-hidden snap-start">
       {/* Subtle background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-white/[0.03] blur-[120px] rounded-full pointer-events-none"></div>
       
-      <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: false, amount: 0.3 }}
+        className="relative z-10 max-w-4xl mx-auto text-center px-6"
+      >
         <h2 className="text-5xl md:text-7xl font-medium tracking-tighter text-white mb-8">
           Start building faster.
         </h2>
-        <Link 
+        <Link
           href="/dashboard"
           className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-white text-black font-semibold text-lg overflow-hidden transition-transform hover:scale-105"
         >
@@ -411,7 +452,7 @@ function CTASection() {
           <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform" />
           <div className="absolute inset-0 bg-neutral-200 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
         </Link>
-      </div>
+      </motion.div>
     </section>
   );
 }
@@ -428,10 +469,12 @@ function Footer() {
 }
 
 export default function LandingPage() {
+  console.log("Forcing React Server Components reload");
   return (
-    <div className="min-h-screen font-sans antialiased bg-black selection:bg-white selection:text-black">
+    <div className="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth font-sans antialiased bg-black selection:bg-white selection:text-black">
       <Navbar />
       <HeroSection />
+      <PipelineSection />
       <AnimatedTerminal />
       <BentoSection />
       <CTASection />
