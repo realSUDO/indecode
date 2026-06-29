@@ -39,9 +39,9 @@ jobs:
         id: filter
         run: |
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
-            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}')
+            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth-app"]}')
           else
-            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}'
+            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth-app"]}'
           fi
           
           echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
