@@ -1,5 +1,5 @@
 {
-  "name": "@repo/auth",
+  "name": "@repo/auth-core",
   "version": "0.1.0",
   "private": true,
   "exports": {

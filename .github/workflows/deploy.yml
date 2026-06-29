@@ -39,15 +39,15 @@ jobs:
         id: filter
         run: |
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
-            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth-app"]}')
+            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth"]}')
           else
-            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth-app"]}'
+            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth"]}'
           fi
           
           echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "payment=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/payment"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth-app"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "database=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/database"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 

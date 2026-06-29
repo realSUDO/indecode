@@ -1,5 +1,5 @@
 {
-  "name": "@repo/auth-app",
+  "name": "@repo/auth",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -38,7 +38,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@repo/auth": "workspace:^",
+    "@repo/auth-core": "workspace:^",
     "@repo/database": "workspace:*",
     "@repo/services": "workspace:^",
     "@repo/trpc": "workspace:*",

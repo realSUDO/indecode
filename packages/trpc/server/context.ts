@@ -1,5 +1,5 @@
 import { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import { auth } from "@repo/auth";
+import { auth } from "@repo/auth-core";
 
 export async function createContext(opts?: CreateExpressContextOptions) {
   let user = null;
