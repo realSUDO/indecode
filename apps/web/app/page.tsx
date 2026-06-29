@@ -11,7 +11,7 @@ import { PipelineAnimation } from "./pipeline";
 function EarlyAccessButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,11 +32,13 @@ function EarlyAccessButton() {
           setEmail("");
         }, 2000);
       } else {
-        setStatus("idle");
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 3000);
       }
     } catch (err) {
       console.error(err);
-      setStatus("idle");
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
     }
   };
 
@@ -94,7 +96,7 @@ function EarlyAccessButton() {
           className="absolute right-0 top-0 bottom-0 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-neutral-200 transition-colors z-10 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)]"
         >
           <span className="flex items-center gap-2">
-            {status === "success" ? "Added" : status === "submitting" ? "..." : isOpen ? "Join" : "Early access"}
+            {status === "success" ? "Added" : status === "error" ? "Failed" : status === "submitting" ? "..." : isOpen ? "Join" : "Early access"}
             {status === "idle" && !isOpen && <ArrowRight size={16} />}
           </span>
         </motion.button>
