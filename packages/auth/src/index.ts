@@ -27,7 +27,7 @@ export const auth = betterAuth({
   trustedOrigins: process.env.NODE_ENV === "production" 
     ? [`https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN}`, `https://payment.${process.env.NEXT_PUBLIC_APP_DOMAIN}`]
     : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
-  baseURL: "http://localhost:3002/api/auth",
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3003/api/auth",
   plugins: [
     nextCookies(),
     {
@@ -46,8 +46,8 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "indecode",
     crossSubDomainCookies: {
-      enabled: process.env.NODE_ENV === "production",
-      domain: process.env.NODE_ENV === "production" ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN}` : undefined,
+      enabled: true,
+      domain: process.env.NODE_ENV === "production" ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN}` : ".localhost",
     },
   },
 });

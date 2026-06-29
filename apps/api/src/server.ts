@@ -25,19 +25,7 @@ if (env.NODE_ENV !== "prod") {
   );
 }
 
-import { auth } from "@repo/auth";
-import { toNodeHandler } from "better-auth/node";
-
-const authHandler = toNodeHandler(auth);
-
-// MUST be above express.json() because BetterAuth handles its own body parsing from the raw request stream
-app.use((req, res, next) => {
-  if (req.url.startsWith("/api/auth")) {
-    authHandler(req, res).catch(next);
-  } else {
-    next();
-  }
-});
+// Auth is now handled by the dedicated auth.indecode.in Next.js application
 
 app.use(express.json());
 

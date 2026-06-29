@@ -21,3 +21,10 @@ api.indecode.in {
         reverse_proxy api:8080
     }
 }
+
+auth.indecode.in {
+    handle {
+        reverse_proxy auth:3000
+    }
+}
+
