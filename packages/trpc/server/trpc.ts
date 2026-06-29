@@ -11,3 +11,18 @@ export const tRPCContext = initTRPC
 export const router = tRPCContext.router;
 
 export const publicProcedure = tRPCContext.procedure;
+
+const isAuthed = tRPCContext.middleware(async ({ next, ctx }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+export const protectedProcedure = tRPCContext.procedure.use(isAuthed);

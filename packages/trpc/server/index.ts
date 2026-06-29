@@ -9,6 +9,7 @@ import { taskRouter } from "./routes/task/route";
 import { projectRouter } from "./routes/project/route";
 import { pullRequestRouter } from "./routes/pull-request/route";
 import { reviewRouter } from "./routes/review/route";
+import { billingRouter } from "./routes/billing/route";
 
 export const serverRouter = router({
   auth: authRouter,
@@ -20,6 +21,7 @@ export const serverRouter = router({
   project: projectRouter,
   pullRequest: pullRequestRouter,
   review: reviewRouter,
+  billing: billingRouter,
 });
 
 export { createContext } from "./context";

@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark scroll-smooth bg-black text-white">
+    <html lang="en" suppressHydrationWarning className="dark scroll-smooth bg-black text-white">
       <body className={`${geistSans.variable} ${geistMono.variable} bg-black text-white min-h-screen`}>
         <GlobalProviders>{children}</GlobalProviders>
       </body>

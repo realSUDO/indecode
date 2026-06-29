@@ -19,6 +19,7 @@
     "drizzle-orm": "^0.45.1",
     "google-auth-library": "^10.5.0",
     "inngest": "^4.11.0",
+    "razorpay": "^2.9.6",
     "zod": "^4.3.5"
   }
 }

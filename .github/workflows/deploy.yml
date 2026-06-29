@@ -17,93 +17,167 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
+      marketing: ${{ steps.filter.outputs.marketing }}
+      payment: ${{ steps.filter.outputs.payment }}
       web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            web:
-              - 'apps/web/**'
-              - 'packages/**'
-              - 'Dockerfile'
-              - 'pnpm-lock.yaml'
+          fetch-depth: 2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - name: Find apps that changed
+        id: filter
+        run: |
+          # Use turbo to dry run and output JSON of packages that need building
+          if git rev-parse HEAD^1 >/dev/null 2>&1; then
+            APPS_JSON=$(npx turbo run build --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api"]}')
+          else
+            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api"]}'
+          fi
+          
+          echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "payment=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/payment"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
-  build-and-push:
+  build-marketing:
+    needs: changes
+    if: needs.changes.outputs.marketing == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-marketing
+          tags: type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: APP_NAME=marketing
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  build-payment:
+    needs: changes
+    if: needs.changes.outputs.payment == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-payment
+          tags: type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: APP_NAME=payment
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  build-web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
+      - uses: docker/metadata-action@v5
         id: meta
-        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+          tags: type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
+          build-args: APP_NAME=web
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+
+  build-api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
+          tags: type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
 
   deploy:
-    needs: [changes, build-and-push]
-    if: always() && (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped')
+    needs: [build-marketing, build-payment, build-web, build-api]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Copy deploy files to VM
-        uses: appleboy/scp-action@v0.1.7
+      - uses: actions/checkout@v4
+      - uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           source: "docker-compose.prod.yml,indecode.caddy,packages/database"
           target: "~/indecode"
-
-      - name: Deploy on VM
-        uses: appleboy/ssh-action@v1
+      - uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
             cd ~/indecode
-            
-            # Ensure DATABASE_URL is in .env so the web container can connect to the db container
-            if ! grep -q "DATABASE_URL" ~/indecode/.env; then
-              echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/indecode" >> ~/indecode/.env
-            fi
-            
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
             mkdir -p ~/global-proxy/sites
             cp ~/indecode/indecode.caddy ~/global-proxy/sites/indecode.caddy
             docker exec global-proxy-caddy-1 caddy reload -c /etc/caddy/Caddyfile
-            
             docker image prune -f

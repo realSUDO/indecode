@@ -1,5 +1,23 @@
-indecode.in, www.indecode.in, in.indecode.in {
-        handle {
-                reverse_proxy indecode-web-1:3000
-        }
+indecode.in, www.indecode.in {
+    handle {
+        reverse_proxy indecode-marketing-1:3000
+    }
+}
+
+in.indecode.in {
+    handle {
+        reverse_proxy indecode-web-1:3000
+    }
+}
+
+payment.indecode.in {
+    handle {
+        reverse_proxy indecode-payment-1:3000
+    }
+}
+
+api.indecode.in {
+    handle {
+        reverse_proxy indecode-api-1:8080
+    }
 }

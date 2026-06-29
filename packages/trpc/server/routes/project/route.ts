@@ -1,30 +1,19 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { projects } from "@repo/database/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 export const projectRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       name: z.string().min(1).max(255),
       description: z.string().optional(),
       organizationId: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
-      // Find a valid user to satisfy the foreign key, or create a dummy one for MVP
-      let user = await db.query.users.findFirst();
-      if (!user) {
-        const { users } = await import("@repo/database/schema");
-        [user] = await db.insert(users).values({
-          id: "system-user-id",
-          name: "System User",
-          email: "system@indecode.local",
-        }).returning();
-        if (!user) throw new Error("Failed to create system user");
-      }
-      
-      const userId = user.id;
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.id;
 
       const [newProject] = await db.insert(projects).values({
         name: input.name,
@@ -41,17 +30,18 @@ export const projectRouter = router({
       };
     }),
 
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       organizationId: z.string().optional(),
     }).optional())
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const userId = ctx.user.id;
+
       const results = await db.select()
         .from(projects)
+        .where(eq(projects.userId, userId))
         .orderBy(desc(projects.createdAt));
 
-      // In MVP, we just return all projects for the user. 
-      // If auth was fully wired we'd filter by userId or organizationId.
       return results.map(p => ({
         id: p.id,
         name: p.name,
@@ -60,15 +50,17 @@ export const projectRouter = router({
       }));
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ projectId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const userId = ctx.user.id;
+
       const project = await db.query.projects.findFirst({
-        where: eq(projects.id, input.projectId),
+        where: and(eq(projects.id, input.projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        throw new Error("Project not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
 
       return {

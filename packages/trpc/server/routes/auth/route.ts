@@ -1,7 +1,7 @@
 import { z, zodUndefinedModel } from "../../schema";
 import { userService } from "../../services";
 import { getAuthenticationMethodOutputSchema } from "@repo/services/user/model";
-import { publicProcedure, router } from "../../trpc";
+import { publicProcedure, protectedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 
 const TAGS = ["Authentication"];
@@ -15,5 +15,10 @@ export const authRouter = router({
     .query(async () => {
       const supportedMethods = await userService.getAuthenticationMethods();
       return supportedMethods;
+    }),
+  getSession: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Return the mock user we inject in trpc.ts, or null
+      return { user: (ctx as any).user || null };
     }),
 });
