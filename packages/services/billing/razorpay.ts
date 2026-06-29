@@ -21,7 +21,7 @@ export async function createSubscription(customerId: string, planId: string = PR
     plan_id: planId,
     customer_id: customerId,
     total_count: 12, // example total count for monthly
-  });
+  } as any);
   return subscription;
 }
 
