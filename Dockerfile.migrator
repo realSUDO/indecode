@@ -11,7 +11,7 @@ FROM base AS builder
 WORKDIR /app
 RUN pnpm add -g turbo
 COPY . .
-RUN turbo prune @repo/api --docker
+RUN turbo prune @repo/database --docker
 
 # --- Stage 2: Install ---
 FROM base AS installer
@@ -21,25 +21,17 @@ COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install --frozen-lockfile
 
-# --- Stage 3: Build ---
-COPY --from=builder /app/out/full/ .
-COPY turbo.json turbo.json
-RUN pnpm turbo run build --filter=@repo/api...
-
-# --- Stage 4: Runner ---
+# --- Stage 3: Runner ---
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 apiuser
-USER apiuser
+RUN adduser --system --uid 1001 migrator
+USER migrator
 
-# Just copy the entire built workspace from the installer!
-# This preserves all pnpm symlinks and workspace structures flawlessly.
-COPY --from=installer --chown=apiuser:nodejs /app .
+COPY --from=installer --chown=migrator:nodejs /app .
+COPY --from=builder --chown=migrator:nodejs /app/out/full/packages/database ./packages/database
 
-EXPOSE 8080
-ENV PORT=8080
-
-CMD ["node", "apps/api/dist/index.js"]
+WORKDIR /app/packages/database
+CMD ["node", "migrate.cjs"]

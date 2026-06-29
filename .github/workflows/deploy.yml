@@ -21,6 +21,7 @@ jobs:
       payment: ${{ steps.filter.outputs.payment }}
       web: ${{ steps.filter.outputs.web }}
       api: ${{ steps.filter.outputs.api }}
+      database: ${{ steps.filter.outputs.database }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,17 +37,17 @@ jobs:
       - name: Find apps that changed
         id: filter
         run: |
-          # Use turbo to dry run and output JSON of packages that need building
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
-            APPS_JSON=$(npx turbo run build --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api"]}')
+            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}')
           else
-            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api"]}'
+            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}'
           fi
           
           echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "payment=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/payment"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "database=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/database"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
   build-marketing:
     needs: changes
@@ -66,12 +67,17 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-marketing
-          tags: type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          build-args: APP_NAME=marketing
+          build-args: |
+            APP_NAME=marketing
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
@@ -93,12 +99,17 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-payment
-          tags: type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          build-args: APP_NAME=payment
+          build-args: |
+            APP_NAME=payment
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
@@ -120,12 +131,17 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web
-          tags: type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          build-args: APP_NAME=web
+          build-args: |
+            APP_NAME=web
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
@@ -147,7 +163,9 @@ jobs:
         id: meta
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
-          tags: type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -155,8 +173,36 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
+  build-migrator:
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-migrator
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.migrator
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
   deploy:
-    needs: [build-marketing, build-payment, build-web, build-api]
+    needs: [build-marketing, build-payment, build-web, build-api, build-migrator]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     steps:
@@ -169,11 +215,15 @@ jobs:
           source: "docker-compose.prod.yml,indecode.caddy,packages/database"
           target: "~/indecode"
       - uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_SHA_VAR: ${{ github.sha }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          envs: GITHUB_SHA_VAR
           script: |
+            export IMAGE_TAG=sha-${GITHUB_SHA_VAR:0:7}
             cd ~/indecode
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
