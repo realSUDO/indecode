@@ -36,7 +36,7 @@ export const auth = betterAuth({
         before: [{
           matcher: (context) => true,
           handler: async (context) => {
-            console.log("[BetterAuth Hook] Received request for:", context.path);
+            console.log("[BetterAuth Hook] Received request for:", context.request?.url);
             return { context };
           }
         }]
