@@ -1,236 +1,119 @@
 name: Build and Deploy to Production
-name: Build and Deploy to Production
-
 
 on:
-on:
-  push:
   push:
     branches:
-    branches:
-      - main
       - main
     paths-ignore:
-    paths-ignore:
-      - "*.md"
       - "*.md"
       - "docs/**"
-      - "docs/**"
-      - ".vscode/**"
       - ".vscode/**"
 
-
-env:
 env:
   REGISTRY: ghcr.io
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
   IMAGE_NAME: ${{ github.repository }}
 
-
-jobs:
 jobs:
   changes:
-  changes:
-    runs-on: ubuntu-latest
     runs-on: ubuntu-latest
     outputs:
-    outputs:
-      marketing: ${{ steps.filter.outputs.marketing }}
       marketing: ${{ steps.filter.outputs.marketing }}
       payment: ${{ steps.filter.outputs.payment }}
-      payment: ${{ steps.filter.outputs.payment }}
-      web: ${{ steps.filter.outputs.web }}
       web: ${{ steps.filter.outputs.web }}
       auth: ${{ steps.filter.outputs.auth }}
-      auth: ${{ steps.filter.outputs.auth }}
-      api: ${{ steps.filter.outputs.api }}
       api: ${{ steps.filter.outputs.api }}
       database: ${{ steps.filter.outputs.database }}
-      database: ${{ steps.filter.outputs.database }}
-    steps:
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
         with:
           fetch-depth: 2
-          fetch-depth: 2
-      - name: Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
-        uses: actions/setup-node@v4
-        with:
         with:
           node-version: 20
-          node-version: 20
-      - name: Install pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v3
-        uses: pnpm/action-setup@v3
-        with:
         with:
           version: 9
-          version: 9
-      - name: Find apps that changed
       - name: Find apps that changed
         id: filter
-        id: filter
-        run: |
         run: |
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
-          if git rev-parse HEAD^1 >/dev/null 2>&1; then
-            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}')
             APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}')
           else
-          else
-            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}'
             APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database"]}'
           fi
-          fi
-          
           
           echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "payment=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/payment"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "payment=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/payment"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUTecho "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUTecho "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth-app"])' >/dev/null echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUTecho "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth-app"])' >/dev/null echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUTecho "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "web=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/web"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth-app"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "database=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/database"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "database=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/database"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-
 
   build-marketing:
-  build-marketing:
-    needs: changes
     needs: changes
     if: needs.changes.outputs.marketing == 'true'
-    if: needs.changes.outputs.marketing == 'true'
-    runs-on: ubuntu-latest
     runs-on: ubuntu-latest
     permissions:
-    permissions:
-      contents: read
       contents: read
       packages: write
-      packages: write
-    steps:
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
       - uses: docker/login-action@v3
         with:
-        with:
-          registry: ${{ env.REGISTRY }}
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/metadata-action@v5
-      - uses: docker/metadata-action@v5
         id: meta
-        id: meta
-        with:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-marketing
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-marketing
-          tags: |
           tags: |
             type=raw,value=latest
-            type=raw,value=latest
-            type=sha,format=short
             type=sha,format=short
       - uses: docker/build-push-action@v5
-      - uses: docker/build-push-action@v5
-        with:
         with:
           context: .
-          context: .
           file: ./Dockerfile
-          file: ./Dockerfile
-          build-args: |
           build-args: |
             APP_NAME=marketing
-            APP_NAME=marketing
-            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
             NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
             NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
-            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
-          push: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          tags: ${{ steps.meta.outputs.tags }}
-
 
   build-payment:
-  build-payment:
-    needs: changes
     needs: changes
     if: needs.changes.outputs.payment == 'true'
-    if: needs.changes.outputs.payment == 'true'
-    runs-on: ubuntu-latest
     runs-on: ubuntu-latest
     permissions:
-    permissions:
-      contents: read
       contents: read
       packages: write
-      packages: write
-    steps:
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
       - uses: docker/login-action@v3
         with:
-        with:
-          registry: ${{ env.REGISTRY }}
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/metadata-action@v5
-      - uses: docker/metadata-action@v5
-        id: meta
         id: meta
         with:
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-payment
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-payment
           tags: |
-          tags: |
-            type=raw,value=latest
             type=raw,value=latest
             type=sha,format=short
-            type=sha,format=short
-      - uses: docker/build-push-action@v5
       - uses: docker/build-push-action@v5
         with:
-        with:
-          context: .
           context: .
           file: ./Dockerfile
-          file: ./Dockerfile
-          build-args: |
           build-args: |
             APP_NAME=payment
-            APP_NAME=payment
-            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
             NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
             NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
-            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
-          push: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          tags: ${{ steps.meta.outputs.tags }}
-
 
   build-web:
     needs: changes
@@ -298,170 +181,86 @@ jobs:
 
   build-api:
     needs: changes
-    needs: changes
-    if: needs.changes.outputs.api == 'true'
     if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
-    runs-on: ubuntu-latest
-    permissions:
     permissions:
       contents: read
-      contents: read
-      packages: write
       packages: write
     steps:
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
-      - uses: docker/login-action@v3
-        with:
         with:
           registry: ${{ env.REGISTRY }}
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
       - uses: docker/metadata-action@v5
         id: meta
-        id: meta
-        with:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api
-          tags: |
           tags: |
             type=raw,value=latest
-            type=raw,value=latest
-            type=sha,format=short
             type=sha,format=short
       - uses: docker/build-push-action@v5
-      - uses: docker/build-push-action@v5
         with:
-        with:
-          context: .
           context: .
           file: ./Dockerfile.api
-          file: ./Dockerfile.api
-          push: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          tags: ${{ steps.meta.outputs.tags }}
-
 
   build-migrator:
-  build-migrator:
-    needs: changes
     needs: changes
     if: needs.changes.outputs.database == 'true'
-    if: needs.changes.outputs.database == 'true'
-    runs-on: ubuntu-latest
     runs-on: ubuntu-latest
     permissions:
-    permissions:
-      contents: read
       contents: read
       packages: write
-      packages: write
     steps:
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
-      - uses: docker/login-action@v3
-        with:
         with:
           registry: ${{ env.REGISTRY }}
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
       - uses: docker/metadata-action@v5
         id: meta
-        id: meta
-        with:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-migrator
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-migrator
-          tags: |
           tags: |
             type=raw,value=latest
-            type=raw,value=latest
-            type=sha,format=short
             type=sha,format=short
       - uses: docker/build-push-action@v5
-      - uses: docker/build-push-action@v5
-        with:
         with:
           context: .
-          context: .
-          file: ./Dockerfile.migrator
           file: ./Dockerfile.migrator
           push: true
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
           tags: ${{ steps.meta.outputs.tags }}
 
-
-  deploy:
   deploy:
     needs: [build-marketing, build-payment, build-web, build-auth, build-api, build-migrator]
-    needs: [build-marketing, build-payment, build-web, build-auth, build-api, build-migrator]
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
-    runs-on: ubuntu-latest
-    steps:
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-      - uses: appleboy/scp-action@v0.1.7
       - uses: appleboy/scp-action@v0.1.7
         with:
-        with:
-          host: ${{ secrets.VM_HOST }}
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
           key: ${{ secrets.VM_SSH_KEY }}
           source: "docker-compose.prod.yml,indecode.caddy,packages/database"
-          source: "docker-compose.prod.yml,indecode.caddy,packages/database"
-          target: "~/indecode"
           target: "~/indecode"
       - uses: appleboy/ssh-action@v1
-      - uses: appleboy/ssh-action@v1
-        env:
         env:
           GITHUB_SHA_VAR: ${{ github.sha }}
-          GITHUB_SHA_VAR: ${{ github.sha }}
-        with:
         with:
           host: ${{ secrets.VM_HOST }}
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          envs: GITHUB_SHA_VAR
           envs: GITHUB_SHA_VAR
           script: |
-          script: |
-            cd ~/indecode
             cd ~/indecode
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             mkdir -p ~/global-proxy/sites
-            mkdir -p ~/global-proxy/sites
-            cp ~/indecode/indecode.caddy ~/global-proxy/sites/indecode.caddy
             cp ~/indecode/indecode.caddy ~/global-proxy/sites/indecode.caddy
             docker exec global-proxy-caddy-1 caddy reload -c /etc/caddy/Caddyfile
-            docker exec global-proxy-caddy-1 caddy reload -c /etc/caddy/Caddyfile
-            docker image prune -f
             docker image prune -f
