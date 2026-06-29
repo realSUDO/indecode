@@ -3,8 +3,6 @@ import { db } from "@repo/database";
 import { waitlist } from "@repo/database/models/waitlist";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
@@ -20,6 +18,7 @@ export async function POST(req: Request) {
 
     // Send confirmation email via Resend
     if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: "Indecode Waitlist <noreply@indecode.in>", // Ensure this domain is verified in Resend
         to: email,

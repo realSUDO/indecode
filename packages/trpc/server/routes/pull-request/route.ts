@@ -37,7 +37,7 @@ export const pullRequestRouter = router({
         authorLogin: pr.authorLogin,
         status: pr.status,
         repoFullName: pr.repository.fullName,
-        latestReviewVerdict: pr.reviews.length > 0 ? pr.reviews[0].overallVerdict : null,
+        latestReviewVerdict: pr.reviews.length > 0 ? pr.reviews[0]!.overallVerdict : null,
         createdAt: pr.createdAt
       }));
     }),
