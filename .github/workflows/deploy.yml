@@ -93,6 +93,12 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
             cd ~/indecode
+            
+            # Ensure DATABASE_URL is in .env so the web container can connect to the db container
+            if ! grep -q "DATABASE_URL" ~/indecode/.env; then
+              echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/indecode" >> ~/indecode/.env
+            fi
+            
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             
