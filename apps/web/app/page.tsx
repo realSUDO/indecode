@@ -122,12 +122,12 @@ function InteractiveCanvas() {
 
     const init = () => {
       particles = [];
-      const numParticles = Math.min((w * h) / 4000, 400);
+      const numParticles = Math.min((w * h) / 7000, 200); // Decreased density
       for (let i = 0; i < numParticles; i++) {
         particles.push({
           x: Math.random() * w, y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5,
-          size: Math.random() * 2 + 0.5,
+          vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, // Slower
+          size: Math.random() * 1.5 + 0.5, // Smaller
         });
       }
     };
@@ -150,16 +150,16 @@ function InteractiveCanvas() {
         if (p.y < 0 || p.y > h) p.vy *= -1;
         const dx = mouse.x - p.x; const dy = mouse.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 200) { const force = (200 - dist) / 200; p.vx += (dx / dist) * force * 0.6; p.vy += (dy / dist) * force * 0.6; }
+        if (dist < 150) { const force = (150 - dist) / 150; p.vx += (dx / dist) * force * 0.4; p.vy += (dy / dist) * force * 0.4; }
         p.vx *= 0.98; p.vy *= 0.98;
         if (Math.abs(p.vx) < 0.2) p.vx += (Math.random() - 0.5) * 0.1;
         if (Math.abs(p.vy) < 0.2) p.vy += (Math.random() - 0.5) * 0.1;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${dist < 200 ? 0.8 : 0.3})`; ctx.fill();
+        ctx.fillStyle = `rgba(255, 255, 255, ${dist < 150 ? 0.6 : 0.2})`; ctx.fill();
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist2 = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist2 < 180) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - dist2 / 180) * 0.35})`; ctx.stroke(); }
+          if (dist2 < 120) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - dist2 / 120) * 0.15})`; ctx.stroke(); }
         }
       }
       rafId = requestAnimationFrame(render);
@@ -341,7 +341,7 @@ function HeroSection() {
       {/* Background Interactive Canvas — parallax layer */}
       <motion.div
         style={{ y: canvasY }}
-        className="absolute top-0 right-0 bottom-0 w-full lg:w-[80%] z-0 opacity-90 mix-blend-screen [mask-image:linear-gradient(to_right,transparent,black_30%,black_100%)] scale-110"
+        className="absolute top-0 right-0 bottom-0 w-full lg:w-[65%] z-0 opacity-70 mix-blend-screen [mask-image:linear-gradient(to_right,transparent,black_40%,black_100%)] scale-105"
       >
         <InteractiveCanvas />
       </motion.div>
