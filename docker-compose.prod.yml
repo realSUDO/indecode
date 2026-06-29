@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   marketing:
-    image: ghcr.io/realsudo/indecode-marketing:${IMAGE_TAG:-latest}
+    image: ghcr.io/realsudo/indecode-marketing:latest
     container_name: marketing
     restart: always
     environment:
@@ -14,7 +14,7 @@ services:
       - global_proxy_net
 
   payment:
-    image: ghcr.io/realsudo/indecode-payment:${IMAGE_TAG:-latest}
+    image: ghcr.io/realsudo/indecode-payment:latest
     container_name: payment
     restart: always
     environment:
@@ -37,7 +37,7 @@ services:
         condition: service_completed_successfully
 
   web:
-    image: ghcr.io/realsudo/indecode-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/realsudo/indecode-web:latest
     container_name: web
     restart: always
     environment:
@@ -63,7 +63,7 @@ services:
         condition: service_healthy
 
   api:
-    image: ghcr.io/realsudo/indecode-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/realsudo/indecode-api:latest
     container_name: api
     restart: always
     environment:
@@ -81,7 +81,7 @@ services:
         condition: service_completed_successfully
 
   init-db:
-    image: ghcr.io/realsudo/indecode-migrator:${IMAGE_TAG:-latest}
+    image: ghcr.io/realsudo/indecode-migrator:latest
     container_name: init-db
     restart: "no"
     environment:
