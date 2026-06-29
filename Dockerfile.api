@@ -2,6 +2,7 @@ FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable pnpm
+RUN corepack prepare pnpm@9.0.0 --activate
 RUN apk update
 RUN apk add --no-cache libc6-compat
 
