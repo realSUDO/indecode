@@ -7,7 +7,7 @@ export async function createContext(opts?: CreateExpressContextOptions) {
 
   if (opts?.req) {
     const authSession = await auth.api.getSession({
-      headers: opts.req.headers,
+      headers: opts.req.headers as any,
     });
     if (authSession) {
       user = authSession.user;
