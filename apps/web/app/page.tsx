@@ -17,7 +17,10 @@ function EarlyAccessButton() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setStatus("submitting");
+    
+    // Optimistic UI update
+    setStatus("success");
+    
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
@@ -25,7 +28,6 @@ function EarlyAccessButton() {
         body: JSON.stringify({ email }),
       });
       if (res.ok) {
-        setStatus("success");
         setTimeout(() => {
           setStatus("idle");
           setIsOpen(false);
@@ -373,7 +375,7 @@ function HeroSection() {
             transition={{ duration: 1, delay: 0.6 }}
             className="mt-7 text-base md:text-lg text-neutral-500 max-w-lg leading-relaxed"
           >
-            I read your repository, generate implementation plans, write production code, and ship merge-ready pull requests. You&apos;re the architect — I&apos;m the engineer.
+            I read your repository, generate implementation plans, write production code, and ship merge-ready pull requests. You&apos;re the architect. I&apos;m the engineer.
           </motion.p>
 
           <motion.div

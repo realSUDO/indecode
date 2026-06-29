@@ -82,7 +82,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "docker-compose.prod.yml,indecode.caddy"
+          source: "docker-compose.prod.yml,indecode.caddy,packages/database"
           target: "~/indecode"
 
       - name: Deploy on VM
@@ -96,6 +96,13 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             
+            echo "Running database migrations..."
+            docker run --rm --network indecode_default \
+              -v ~/indecode/packages/database:/database -w /database \
+              -e DATABASE_URL=postgresql://postgres:postgres@db:5432/indecode \
+              node:20-alpine \
+              sh -c "npm install -g pnpm && pnpm install && pnpm dlx drizzle-kit push"
+
             mkdir -p ~/global-proxy/sites
             cp ~/indecode/indecode.caddy ~/global-proxy/sites/indecode.caddy
             docker exec global-proxy-caddy-1 caddy reload -c /etc/caddy/Caddyfile
