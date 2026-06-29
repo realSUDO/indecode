@@ -21,8 +21,23 @@ services:
       - default
       - global_proxy_net
     depends_on:
+      init-db:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
+
+  init-db:
+    image: ghcr.io/realsudo/indecode-web:latest
+    restart: "no"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - default
+      - global_proxy_net
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["node", "migrate.cjs"]
 
   db:
     image: pgvector/pgvector:pg15

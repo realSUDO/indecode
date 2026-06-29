@@ -101,13 +101,6 @@ jobs:
             
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            
-            echo "Running database migrations..."
-            docker run --rm --network indecode_default \
-              -v ~/indecode/packages/database:/database -w /database \
-              -e DATABASE_URL=postgresql://postgres:postgres@db:5432/indecode \
-              node:20-alpine \
-              sh -c "npm install -g pnpm && pnpm install && pnpm dlx drizzle-kit push"
 
             mkdir -p ~/global-proxy/sites
             cp ~/indecode/indecode.caddy ~/global-proxy/sites/indecode.caddy
