@@ -7,12 +7,15 @@
     "moduleResolution": "Node",
     "module": "CommonJS",
 
-    // We don't need these for our final build
     "declarationMap": false,
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/*": ["../../packages/*/src"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "../../packages"],
   "ts-node": {
     "swc": true
   }
