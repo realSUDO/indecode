@@ -1,15 +1,24 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
-export const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+let razorpayInstance: Razorpay | null = null;
+export function getRazorpay() {
+  if (!razorpayInstance) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.warn("Razorpay keys are missing. Razorpay will not function correctly.");
+    }
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || "",
+      key_secret: process.env.RAZORPAY_KEY_SECRET || "",
+    });
+  }
+  return razorpayInstance;
+}
 
 export const PRO_PLAN_ID = process.env.RAZORPAY_PRO_PLAN_ID || "";
 
 export async function createCustomer(email: string, name: string) {
-  const customer = await razorpay.customers.create({
+  const customer = await getRazorpay().customers.create({
     email,
     name,
   });
@@ -17,7 +26,7 @@ export async function createCustomer(email: string, name: string) {
 }
 
 export async function createSubscription(customerId: string, planId: string = PRO_PLAN_ID) {
-  const subscription = await razorpay.subscriptions.create({
+  const subscription = await getRazorpay().subscriptions.create({
     plan_id: planId,
     customer_id: customerId,
     total_count: 12, // example total count for monthly
@@ -32,7 +41,7 @@ export function verifyWebhookSignature(rawBody: string, signature: string, secre
 }
 
 export async function createOrder(amountInPaise: number, receipt: string, currency = "INR") {
-  const order = await razorpay.orders.create({
+  const order = await getRazorpay().orders.create({
     amount: amountInPaise,
     currency,
     receipt,
