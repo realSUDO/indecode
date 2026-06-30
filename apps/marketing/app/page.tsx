@@ -295,6 +295,7 @@ function Navbar() {
           <a href="#developers" className="hover:text-white transition-colors">Developers</a>
         </div>
 
+        <div className="hidden md:flex items-center gap-4">
           <button 
             onClick={() => {
               const isDev = process.env.NODE_ENV !== "production";
