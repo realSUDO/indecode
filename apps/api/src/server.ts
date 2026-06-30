@@ -41,6 +41,64 @@ if (env.NODE_ENV !== "prod" && env.NODE_ENV !== "production") {
 
 // Auth is now handled by the dedicated auth.indecode.in Next.js application
 
+import { verifyWebhookSignature } from "@repo/services/billing/razorpay";
+import { db } from "@repo/database";
+import { users } from "@repo/database/models/user";
+import { auditLogs } from "@repo/database/models/audit-log";
+import { eq } from "drizzle-orm";
+import { invalidateCache } from "@repo/services/cache";
+
+app.post("/api/webhooks/razorpay", express.raw({ type: "application/json" }), async (req, res) => {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers["x-razorpay-signature"] as string;
+
+  if (!secret || !signature) {
+    return res.status(400).send("Webhook secret or signature missing");
+  }
+
+  const rawBody = req.body.toString("utf8");
+  if (!verifyWebhookSignature(rawBody, signature, secret)) {
+    return res.status(400).send("Invalid signature");
+  }
+
+  try {
+    const event = JSON.parse(rawBody);
+    
+    // Process only payment.captured or subscription.charged for now
+    if (event.event === "payment.captured" || event.event === "subscription.charged") {
+      // Razorpay entity might have email or contact in payload depending on what was collected
+      const email = event.payload?.payment?.entity?.email;
+      
+      if (email) {
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, email)
+        });
+
+        if (user) {
+          await db.update(users).set({
+            plan: "pro",
+            subscriptionStatus: "active"
+          }).where(eq(users.id, user.id));
+
+          await db.insert(auditLogs).values({
+            actorId: user.id,
+            targetUserId: user.id,
+            action: "webhook_plan_upgraded",
+            metadata: { event: event.event, paymentId: event.payload.payment.entity.id }
+          });
+
+          await invalidateCache(`user:profile:${user.id}`);
+        }
+      }
+    }
+    
+    res.status(200).send("Webhook received");
+  } catch (err) {
+    logger.error("Error processing webhook:", err);
+    res.status(500).send("Webhook processing failed");
+  }
+});
+
 app.use(express.json());
 
 app.get("/", (req, res) => {

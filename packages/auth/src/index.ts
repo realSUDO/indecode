@@ -14,6 +14,20 @@ const baseConfig = {
       verification: schema.verifications,
     },
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user"
+      },
+      plan: {
+        type: "string",
+        required: false,
+        defaultValue: "free"
+      }
+    }
+  },
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
