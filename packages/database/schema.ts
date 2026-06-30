@@ -13,3 +13,6 @@ export * from "./models/task";
 export * from "./models/embeddings";
 export * from "./models/review";
 export * from "./models/waitlist";
+export * from "./models/coupon";
+export * from "./models/coupon-redemption";
+export * from "./models/audit-log";

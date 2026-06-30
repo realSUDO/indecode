@@ -43,6 +43,13 @@
       "when": 1782687792388,
       "tag": "0005_fine_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782821070560,
+      "tag": "0006_crazy_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

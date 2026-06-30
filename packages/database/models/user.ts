@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -6,7 +6,9 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: boolean("email_verified").default(false),
   image: text("image"),
+  role: varchar("role", { length: 20 }).notNull().default("user"), // 'user' or 'admin'
   plan: varchar("plan", { length: 20 }).notNull().default("free"),
+  totalExecutions: integer("total_executions").notNull().default(0),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),
   subscriptionStatus: varchar("subscription_status", { length: 20 }),
