@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { discoverySessions, discoveryMessages, featureRequests } from "@repo/database/schema";
 import { eq, asc } from "drizzle-orm";
@@ -7,7 +7,7 @@ import { generateInitialDiscoveryMessage, generateDiscoveryResponse } from "@rep
 import { inngest } from "@repo/services/inngest";
 
 export const discoveryRouter = router({
-  getSession: publicProcedure
+  getSession: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .query(async ({ input }) => {
       const session = await db.query.discoverySessions.findFirst({
@@ -40,7 +40,7 @@ export const discoveryRouter = router({
    * Initialize a discovery session with the first AI message.
    * Called when user first visits the discovery page and no messages exist yet.
    */
-  initialize: publicProcedure
+  initialize: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .mutation(async ({ input }) => {
       // Get the session
@@ -81,7 +81,7 @@ export const discoveryRouter = router({
       return { alreadyInitialized: false };
     }),
 
-  sendMessage: publicProcedure
+  sendMessage: protectedProcedure
     .input(z.object({
       featureRequestId: z.string(),
       message: z.string().min(1),
@@ -170,7 +170,7 @@ export const discoveryRouter = router({
       };
     }),
 
-  complete: publicProcedure
+  complete: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .mutation(async ({ input }) => {
       // Mark session as completed

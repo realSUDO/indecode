@@ -4,29 +4,45 @@ import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "../../../_trpc/client";
 
 function GithubCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const linkMutation = trpc.github.linkInstallationToProject.useMutation();
+
   useEffect(() => {
-    const installationId = searchParams.get("installation_id");
-    const setupAction = searchParams.get("setup_action");
-    const state = searchParams.get("state"); // We pass projectId in state
+    const processCallback = async () => {
+      const installationIdStr = searchParams.get("installation_id");
+      const setupAction = searchParams.get("setup_action");
+      const state = searchParams.get("state"); // We pass projectId in state
 
-    if (installationId && setupAction === "install") {
-      toast.success("GitHub App installed successfully!");
-    } else {
-      toast.info("Returned from GitHub.");
-    }
+      if (installationIdStr && setupAction === "install" && state) {
+        const installationId = parseInt(installationIdStr, 10);
+        try {
+          // Add a small delay because GitHub's webhook might take a second to hit our backend
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          await linkMutation.mutateAsync({ installationId, projectId: state });
+          toast.success("GitHub App installed successfully!");
+        } catch (error) {
+          toast.error("Failed to link GitHub App to this project.");
+          console.error(error);
+        }
+      } else {
+        toast.info("Returned from GitHub.");
+      }
 
-    // Redirect back to the project if state (projectId) is provided
-    if (state) {
-      router.push(`/project/${state}/repos`);
-    } else {
-      router.push("/dashboard");
-    }
-  }, [router, searchParams]);
+      // Redirect back to the project if state (projectId) is provided
+      if (state) {
+        router.push(`/project/${state}/repos`);
+      } else {
+        router.push("/dashboard");
+      }
+    };
+
+    processCallback();
+  }, [router, searchParams, linkMutation]);
 
   return (
     <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)]">

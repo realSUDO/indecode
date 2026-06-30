@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { prds, featureRequests, discoverySessions } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
 import { inngest } from "@repo/services/inngest";
 
 export const prdRouter = router({
-  getByFeature: publicProcedure
+  getByFeature: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .query(async ({ input }) => {
       const prd = await db.query.prds.findFirst({
@@ -27,7 +27,7 @@ export const prdRouter = router({
       };
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       prdId: z.string(),
       content: z.string().min(1),
@@ -52,7 +52,7 @@ export const prdRouter = router({
       return { id: updated.id, version: updated.version };
     }),
 
-  approve: publicProcedure
+  approve: protectedProcedure
     .input(z.object({ prdId: z.string() }))
     .mutation(async ({ input }) => {
       const prd = await db.query.prds.findFirst({
@@ -80,7 +80,7 @@ export const prdRouter = router({
       return { id: updated.id, status: updated.status };
     }),
 
-  reject: publicProcedure
+  reject: protectedProcedure
     .input(z.object({ prdId: z.string() }))
     .mutation(async ({ input }) => {
       const [updated] = await db.update(prds)
@@ -92,7 +92,7 @@ export const prdRouter = router({
       return { id: updated.id, status: updated.status };
     }),
 
-  regenerate: publicProcedure
+  regenerate: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .mutation(async ({ input }) => {
       const session = await db.query.discoverySessions.findFirst({

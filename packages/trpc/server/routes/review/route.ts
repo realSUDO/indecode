@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { reviews, reviewIssues } from "@repo/database/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const reviewRouter = router({
-  getByPullRequest: publicProcedure
+  getByPullRequest: protectedProcedure
     .input(z.object({ pullRequestId: z.string() }))
     .query(async ({ input }) => {
       return await db.query.reviews.findMany({
@@ -17,7 +17,7 @@ export const reviewRouter = router({
       });
     }),
 
-  resolveIssue: publicProcedure
+  resolveIssue: protectedProcedure
     .input(z.object({ issueId: z.string() }))
     .mutation(async ({ input }) => {
       await db.update(reviewIssues)

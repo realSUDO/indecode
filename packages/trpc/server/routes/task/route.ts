@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { tasks } from "@repo/database/schema";
 import { eq, asc } from "drizzle-orm";
 
 export const taskRouter = router({
-  listByFeature: publicProcedure
+  listByFeature: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .query(async ({ input }) => {
       const result = await db.query.tasks.findMany({
@@ -27,7 +27,7 @@ export const taskRouter = router({
       }));
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       taskId: z.string(),
       title: z.string().min(1).optional(),
@@ -46,7 +46,7 @@ export const taskRouter = router({
       return { id: updated.id, status: updated.status, title: updated.title };
     }),
 
-  reorder: publicProcedure
+  reorder: protectedProcedure
     .input(z.object({
       taskId: z.string(),
       newSortOrder: z.number().int(),

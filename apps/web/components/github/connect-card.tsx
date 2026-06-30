@@ -8,7 +8,7 @@ import { trpc } from "~/trpc/client";
 export function GitHubConnectCard({ projectId, orgId }: { projectId: string; orgId?: string }) {
   // Pass the projectId in the state parameter so the callback knows where to return
   const { data: installData, isLoading } = trpc.github.getInstallUrl.useQuery({
-    organizationId: projectId, 
+    projectId: projectId, 
   });
 
   const handleInstall = () => {

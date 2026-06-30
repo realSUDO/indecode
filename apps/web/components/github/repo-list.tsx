@@ -14,7 +14,7 @@ export function RepoList({ projectId }: { projectId: string }) {
   
   // Using projectId as the organization filter for our placeholder logic
   const { data: allGithubRepos, isLoading, error } = trpc.github.listRepos.useQuery({
-    organizationId: projectId 
+    projectId: projectId 
   });
 
   const { data: connectedRepos } = trpc.github.listConnectedRepos.useQuery(
@@ -126,7 +126,7 @@ export function RepoList({ projectId }: { projectId: string }) {
                       disabled={syncingId === repo.id || syncRepo.isPending}
                       onClick={() => {
                         setSyncingId(repo.id);
-                        syncRepo.mutate({ repositoryId: repo.id });
+                        syncRepo.mutate({ repositoryId: repo.id, projectId: projectId });
                       }}
                       className={repo.chunkCount > 0 ? "bg-secondary text-secondary-foreground hover:bg-secondary/80" : ""}
                     >
@@ -143,7 +143,7 @@ export function RepoList({ projectId }: { projectId: string }) {
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-destructive"
-                      onClick={() => disconnectRepo.mutate({ repositoryId: repo.id })}
+                      onClick={() => disconnectRepo.mutate({ repositoryId: repo.id, projectId: projectId })}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

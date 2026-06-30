@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { featureRequests, users } from "@repo/database/schema";
 import { eq, desc } from "drizzle-orm";
 import { inngest } from "@repo/services/inngest";
 
 export const featureRequestRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       projectId: z.string(),
       title: z.string().min(1).max(500),
@@ -53,7 +53,7 @@ export const featureRequestRouter = router({
       }
     }),
 
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       projectId: z.string(),
       status: z.string().optional(),
@@ -86,7 +86,7 @@ export const featureRequestRouter = router({
       }));
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .query(async ({ input }) => {
       const feature = await db.query.featureRequests.findFirst({
@@ -109,7 +109,7 @@ export const featureRequestRouter = router({
       };
     }),
 
-  updateStatus: publicProcedure
+  updateStatus: protectedProcedure
     .input(z.object({
       featureRequestId: z.string(),
       status: z.string(),
@@ -124,7 +124,7 @@ export const featureRequestRouter = router({
       return { id: updated.id, status: updated.status };
     }),
 
-  triggerImplementation: publicProcedure
+  triggerImplementation: protectedProcedure
     .input(z.object({
       featureRequestId: z.string(),
     }))

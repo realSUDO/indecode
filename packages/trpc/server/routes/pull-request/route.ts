@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../../trpc";
+import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { pullRequests, repositories } from "@repo/database/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
 export const pullRequestRouter = router({
-  listByProject: publicProcedure
+  listByProject: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       // Find all repos for this project
@@ -42,7 +42,7 @@ export const pullRequestRouter = router({
       }));
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ pullRequestId: z.string() }))
     .query(async ({ input }) => {
       const pr = await db.query.pullRequests.findFirst({
@@ -59,7 +59,7 @@ export const pullRequestRouter = router({
       return pr;
     }),
 
-  getByFeatureId: publicProcedure
+  getByFeatureId: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
     .query(async ({ input }) => {
       const pr = await db.query.pullRequests.findFirst({
@@ -78,7 +78,7 @@ export const pullRequestRouter = router({
       return pr || null;
     }),
 
-  merge: publicProcedure
+  merge: protectedProcedure
     .input(z.object({ pullRequestId: z.string(), commitMessage: z.string().optional() }))
     .mutation(async ({ input }) => {
       const { getInstallationOctokit } = require("@repo/services/github");
