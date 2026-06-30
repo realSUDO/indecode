@@ -45,9 +45,79 @@ export default function TasksPage() {
   }
 
   const sortedTasks = [...(taskList || [])].sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+  const todoTasks = sortedTasks.filter(t => t.status === "todo");
+  const inProgressTasks = sortedTasks.filter(t => t.status === "in_progress");
+  const doneTasks = sortedTasks.filter(t => t.status === "done");
+
+  const renderTaskCard = (task: Task, index: number) => {
+    const isDone = task.status === "done";
+    const isInProgress = task.status === "in_progress";
+    const isTodo = task.status === "todo";
+
+    return (
+      <motion.div
+        layout
+        key={task.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${
+          isInProgress 
+            ? "border-white/20 bg-white/5 shadow-2xl" 
+            : isDone
+            ? "border-white/5 bg-transparent opacity-60"
+            : "border-white/5 bg-[#0A0A0A]"
+        }`}
+      >
+        {isInProgress && (
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent z-0"
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          />
+        )}
+
+        <div className="relative z-10 p-4 flex flex-col gap-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 flex-shrink-0">
+              {isDone && <CheckCircle2 className="w-4 h-4 text-neutral-400" />}
+              {isInProgress && <PlayCircle className="w-4 h-4 text-white animate-pulse" />}
+              {isTodo && <Circle className="w-4 h-4 text-neutral-600" />}
+            </div>
+            <div>
+              <h3 className={`font-medium text-sm transition-colors duration-300 ${
+                isDone ? "text-neutral-400 line-through decoration-neutral-600" : "text-white"
+              }`}>
+                {task.title}
+              </h3>
+            </div>
+          </div>
+          
+          {task.description && (
+            <p className="text-neutral-500 text-xs leading-relaxed line-clamp-3">
+              {task.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2 mt-auto pt-2">
+            {task.priority && (
+              <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/10 text-neutral-400 bg-white/5">
+                {task.priority}
+              </span>
+            )}
+            {task.complexity && (
+              <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/10 text-neutral-400 bg-white/5">
+                {task.complexity}
+              </span>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 space-y-12">
+    <div className="max-w-7xl mx-auto p-8 space-y-12">
       {/* Header */}
       <div className="flex items-end justify-between border-b border-white/10 pb-6">
         <div>
@@ -73,9 +143,9 @@ export default function TasksPage() {
         )}
       </div>
 
-      {/* Task List */}
+      {/* Task Kanban */}
       {!taskList || taskList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 text-center">
+        <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
             <div className="w-8 h-8 border-2 border-dashed border-neutral-600 rounded-full" />
           </div>
@@ -85,73 +155,62 @@ export default function TasksPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <AnimatePresence>
-            {sortedTasks.map((task: Task, index: number) => {
-              const isDone = task.status === "done";
-              const isInProgress = task.status === "in_progress";
-              const isTodo = task.status === "todo";
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          {/* Todo Column */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+              <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">To Do</h3>
+              <span className="text-xs bg-white/10 text-white px-2 py-0.5 rounded-full">{todoTasks.length}</span>
+            </div>
+            <div className="flex flex-col gap-3 min-h-[200px]">
+              <AnimatePresence>
+                {todoTasks.map((task, i) => renderTaskCard(task, i))}
+              </AnimatePresence>
+              {todoTasks.length === 0 && (
+                <div className="py-8 text-center text-neutral-600 text-sm border border-dashed border-white/5 rounded-xl">
+                  No tasks
+                </div>
+              )}
+            </div>
+          </div>
 
-              return (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${
-                    isInProgress 
-                      ? "border-white/20 bg-white/5 shadow-2xl" 
-                      : isDone
-                      ? "border-white/5 bg-transparent opacity-60"
-                      : "border-white/5 bg-[#0A0A0A]"
-                  }`}
-                >
-                  {/* Subtle pulsing background for active task */}
-                  {isInProgress && (
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent z-0"
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    />
-                  )}
+          {/* In Progress Column */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider">In Progress</h3>
+              <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{inProgressTasks.length}</span>
+            </div>
+            <div className="flex flex-col gap-3 min-h-[200px]">
+              <AnimatePresence>
+                {inProgressTasks.map((task, i) => renderTaskCard(task, i))}
+              </AnimatePresence>
+              {inProgressTasks.length === 0 && (
+                <div className="py-8 text-center text-neutral-600 text-sm border border-dashed border-white/5 rounded-xl">
+                  No tasks
+                </div>
+              )}
+            </div>
+          </div>
 
-                  <div className="relative z-10 p-5 flex items-start gap-4">
-                    <div className="mt-0.5 flex-shrink-0">
-                      {isDone && <CheckCircle2 className="w-5 h-5 text-neutral-400" />}
-                      {isInProgress && <PlayCircle className="w-5 h-5 text-white animate-pulse" />}
-                      {isTodo && <Circle className="w-5 h-5 text-neutral-600" />}
-                    </div>
+          {/* Done Column */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+              <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Done</h3>
+              <span className="text-xs bg-white/10 text-white px-2 py-0.5 rounded-full">{doneTasks.length}</span>
+            </div>
+            <div className="flex flex-col gap-3 min-h-[200px]">
+              <AnimatePresence>
+                {doneTasks.map((task, i) => renderTaskCard(task, i))}
+              </AnimatePresence>
+              {doneTasks.length === 0 && (
+                <div className="py-8 text-center text-neutral-600 text-sm border border-dashed border-white/5 rounded-xl">
+                  No tasks
+                </div>
+              )}
+            </div>
+          </div>
 
-                    <div className="flex-1">
-                      <h3 className={`font-medium text-base transition-colors duration-300 ${
-                        isDone ? "text-neutral-400 line-through decoration-neutral-600" : "text-white"
-                      }`}>
-                        {task.title}
-                      </h3>
-                      {task.description && (
-                        <p className="text-neutral-500 text-sm mt-1.5 leading-relaxed">
-                          {task.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-2 mt-3">
-                        {task.priority && (
-                          <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-white/10 text-neutral-400 bg-white/5">
-                            {task.priority}
-                          </span>
-                        )}
-                        {task.complexity && (
-                          <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-white/10 text-neutral-400 bg-white/5">
-                            {task.complexity}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
         </div>
       )}
     </div>
