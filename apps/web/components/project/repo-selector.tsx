@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Github, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Github, Loader2, Link as LinkIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "~/components/ui/command";
 import {
   Popover,
@@ -23,24 +24,60 @@ import { toast } from "sonner";
 export function RepoSelector({ projectId }: { projectId: string }) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
+  const [connectingRepo, setConnectingRepo] = React.useState<string | null>(null);
 
-  const { data: connectedRepos, isLoading } = trpc.github.listConnectedRepos.useQuery(
+  const utils = trpc.useUtils();
+
+  // Repos already connected to this project (from our DB)
+  const { data: connectedRepos, isLoading: isLoadingConnected } = trpc.github.listConnectedRepos.useQuery(
     { projectId },
     { refetchInterval: 5000 }
   );
-  
+
+  // All repos accessible via the GitHub App installation
+  const { data: allGithubRepos, isLoading: isLoadingGithub, error: githubError } = trpc.github.listRepos.useQuery(
+    { projectId },
+    { retry: false }
+  );
+
+  const connectRepo = trpc.github.connectRepo.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Connected ${data.fullName}`);
+      setConnectingRepo(null);
+      setValue(data.fullName);
+      utils.github.listConnectedRepos.invalidate({ projectId });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to connect repository");
+      setConnectingRepo(null);
+    },
+  });
+
   const syncRepo = trpc.github.syncRepoCodebase.useMutation({
     onSuccess: () => {
       toast.success("Codebase sync started! This might take a minute.");
     },
     onError: (err) => {
       toast.error(err.message || "Failed to start sync");
-    }
+    },
   });
 
-  const selectedRepo = value 
-    ? connectedRepos?.find((r: any) => r.fullName === value) 
+  // Filter available repos to exclude already-connected ones
+  const availableRepos = allGithubRepos?.filter(
+    (githubRepo: any) =>
+      !connectedRepos?.some((connected: any) => connected.fullName === githubRepo.fullName)
+  );
+
+  const isLoading = isLoadingConnected || isLoadingGithub;
+
+  const selectedRepo = value
+    ? connectedRepos?.find((r: any) => r.fullName === value)
     : connectedRepos?.[0];
+
+  const handleConnectRepo = (repoFullName: string) => {
+    setConnectingRepo(repoFullName);
+    connectRepo.mutate({ projectId, repoFullName });
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -50,44 +87,91 @@ export function RepoSelector({ projectId }: { projectId: string }) {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-[280px] justify-between border-white/10 bg-[#0A0A0A] hover:bg-[#111111] hover:text-white"
+            className="w-[320px] justify-between border-white/10 bg-[#0A0A0A] hover:bg-[#111111] hover:text-white"
           >
             <div className="flex items-center gap-2 truncate">
               <Github className="h-4 w-4 shrink-0 text-neutral-400" />
               <span className="truncate">
-                {isLoading ? "Loading repositories..." : selectedRepo ? selectedRepo.fullName : "No repositories connected"}
+                {isLoading
+                  ? "Loading repositories..."
+                  : selectedRepo
+                    ? selectedRepo.fullName
+                    : githubError
+                      ? "Install GitHub App first"
+                      : "Select a repository..."}
               </span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[280px] p-0 border-white/10 bg-[#0A0A0A]" align="start">
+        <PopoverContent className="w-[320px] p-0 border-white/10 bg-[#0A0A0A]" align="start">
           <Command>
-            <CommandInput placeholder="Search repository..." className="border-none focus:ring-0" />
+            <CommandInput placeholder="Search repositories..." className="border-none focus:ring-0" />
             <CommandList>
-              <CommandEmpty>No repository found.</CommandEmpty>
-              <CommandGroup>
-                {connectedRepos?.map((repo: any) => (
-                  <CommandItem
-                    key={repo.id}
-                    value={repo.fullName}
-                    keywords={[repo.name, repo.owner]}
-                    onSelect={(currentValue) => {
-                      setValue(currentValue);
-                      setOpen(false);
-                    }}
-                    className="hover:bg-white/5 data-[selected=true]:bg-white/5 cursor-pointer"
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selectedRepo?.fullName === repo.fullName ? "opacity-100 text-white" : "opacity-0"
+              <CommandEmpty>
+                {githubError
+                  ? "GitHub App not installed for this project."
+                  : "No repositories found."}
+              </CommandEmpty>
+
+              {/* Connected Repos Group */}
+              {connectedRepos && connectedRepos.length > 0 && (
+                <CommandGroup heading="Connected">
+                  {connectedRepos.map((repo: any) => (
+                    <CommandItem
+                      key={`connected-${repo.id}`}
+                      value={repo.fullName ?? ""}
+                      keywords={(repo.fullName ?? "").split("/").filter(Boolean)}
+                      onSelect={(currentValue) => {
+                        setValue(currentValue);
+                        setOpen(false);
+                      }}
+                      className="hover:bg-white/5 data-[selected=true]:bg-white/5 cursor-pointer"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedRepo?.fullName === repo.fullName ? "opacity-100 text-emerald-400" : "opacity-0"
+                        )}
+                      />
+                      <span className="truncate">{repo.fullName}</span>
+                      {repo.chunkCount > 0 ? (
+                        <span className="ml-auto text-[10px] text-emerald-500 font-medium">synced</span>
+                      ) : (
+                        <span className="ml-auto text-[10px] text-amber-500 font-medium">not synced</span>
                       )}
-                    />
-                    {repo.fullName}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              {/* Available Repos Group */}
+              {availableRepos && availableRepos.length > 0 && (
+                <>
+                  {connectedRepos && connectedRepos.length > 0 && <CommandSeparator />}
+                  <CommandGroup heading="Available">
+                    {availableRepos.map((repo: any) => (
+                      <CommandItem
+                        key={`available-${repo.id}`}
+                        value={repo.fullName ?? ""}
+                        keywords={[...(repo.fullName ?? "").split("/").filter(Boolean), repo.name ?? ""]}
+                        onSelect={() => handleConnectRepo(repo.fullName)}
+                        className="hover:bg-white/5 data-[selected=true]:bg-white/5 cursor-pointer"
+                      >
+                        {connectingRepo === repo.fullName ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-neutral-400" />
+                        ) : (
+                          <LinkIcon className="mr-2 h-4 w-4 text-neutral-500" />
+                        )}
+                        <span className="truncate">{repo.fullName}</span>
+                        <span className="ml-auto text-[10px] text-neutral-500 font-medium">
+                          {repo.isPrivate ? "private" : "public"}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
