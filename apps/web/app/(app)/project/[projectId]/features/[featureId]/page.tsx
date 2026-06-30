@@ -29,8 +29,8 @@ const STATUS_LABELS: Record<string, string> = {
 import { useFeatureSocket } from "~/hooks/use-feature-socket";
 
 function getNextAction(status: string | undefined, projectId: string, featureId: string, router: any, prdReady: boolean) {
-  if (status === "discovery") {
-    return { label: "Continue Discovery", action: () => router.push(`/project/${projectId}/discovery`) };
+  if (status === "submitted" || status === "discovery") {
+    return { label: "Continue Discovery", action: () => router.push(`/project/${projectId}/features/${featureId}/discovery`) };
   }
   if (status === "prd_draft") {
     if (!prdReady) return null; // Wait for PRD to be generated
