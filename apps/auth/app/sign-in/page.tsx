@@ -9,7 +9,7 @@ export default function SignInPage() {
   const handleSignIn = async () => {
     const isDev = process.env.NODE_ENV !== "production";
     const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in";
-    const dashboardUrl = isDev ? "http://localhost:3000/dashboard" : `https://in.${appDomain}/dashboard`;
+    const dashboardUrl = isDev ? "http://localhost:3003/dashboard" : `https://in.${appDomain}/dashboard`;
 
     await authClient.signIn.social({
       provider: "github",

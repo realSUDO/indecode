@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { 
   BarChart, 
   Settings, 
   FolderGit2, 
   LayoutDashboard,
   MessageSquare,
-  Box
+  Box,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ import { ProjectSidebar } from "./project-sidebar";
 
 export function AppSidebar() {
   const params = useParams();
+  const pathname = usePathname();
   const projectId = params?.projectId as string;
 
   const { data: projects } = trpc.project.list.useQuery(undefined, {
@@ -41,7 +43,7 @@ export function AppSidebar() {
   return (
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
+        <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <FolderGit2 className="size-4" />
           </div>
@@ -49,13 +51,13 @@ export function AppSidebar() {
             <span className="truncate font-semibold">Indecode</span>
             <span className="truncate text-xs">ShipFlow AI</span>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Dashboard">
+            <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === "/dashboard"}>
               <Link href="/dashboard">
                 <LayoutDashboard />
                 <span>Dashboard</span>
@@ -70,7 +72,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {projects?.map((project: any) => (
                 <SidebarMenuItem key={project.id}>
-                  <SidebarMenuButton asChild tooltip={project.name}>
+                  <SidebarMenuButton asChild tooltip={project.name} isActive={pathname.includes(`/project/${project.id}`)}>
                     <Link href={`/project/${project.id}/features`}>
                       <Box />
                       <span>{project.name}</span>
@@ -94,7 +96,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Settings">
+                <SidebarMenuButton asChild tooltip="Billing" isActive={pathname === "/billing"}>
+                  <Link href="/billing">
+                    <CreditCard />
+                    <span>Billing</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Settings" isActive={pathname === "/settings"}>
                   <Link href="/settings">
                     <Settings />
                     <span>Settings</span>

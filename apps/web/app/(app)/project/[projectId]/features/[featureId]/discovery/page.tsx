@@ -10,6 +10,8 @@ import { Badge } from "~/components/ui/badge";
 import { Loader2, ArrowLeft, Send, CheckCircle2, Bot, User } from "lucide-react";
 import { toast } from "sonner";
 
+import { ModelBadge } from "~/components/ui/model-badge";
+
 export default function DiscoveryPage() {
   const params = useParams();
   const router = useRouter();
@@ -47,6 +49,7 @@ export default function DiscoveryPage() {
 
   const completeMutation = trpc.discovery.complete.useMutation({
     onSuccess: () => {
+      utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
       toast.success("Discovery completed! PRD generation will begin shortly.");
       router.push(`/project/${projectId}/features/${featureId}`);
     },
@@ -60,7 +63,7 @@ export default function DiscoveryPage() {
     if (session && session.messages.length === 0 && session.status === "active" && !initializeMutation.isPending) {
       initializeMutation.mutate({ featureRequestId: featureId });
     }
-  }, [session]);
+  }, [session, featureId, initializeMutation]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -119,6 +122,7 @@ export default function DiscoveryPage() {
               <span className="text-xs text-muted-foreground">
                 {session.messages.length} messages
               </span>
+              <ModelBadge />
             </div>
           </div>
         </div>
