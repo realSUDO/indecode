@@ -12,7 +12,7 @@ export default function ProjectReposPage() {
 
   // We are using projectId as the organizationId identifier for the backend logic for now
   const { data: status, isLoading } = trpc.github.getInstallationStatus.useQuery({
-    organizationId: projectId,
+    projectId: projectId,
   });
 
   if (isLoading) {
