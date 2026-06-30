@@ -11,9 +11,32 @@ services:
 
     ports:
       - "5432:5432"
-
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  valkey:
+    image: valkey/valkey:latest
+    container_name: indecode-valkey-dev
+    restart: unless-stopped
+    command: valkey-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+
+  inngest:
+    image: inngest/inngest:latest
+    container_name: indecode-inngest-dev
+    restart: unless-stopped
+    environment:
+      - INNGEST_DEV=1
+    ports:
+      - "8288:8288"
+      - "8289:8289"
+    volumes:
+      - inngest_data:/home/inngest/.inngest
+
 volumes:
   pg_data:
+  valkey_data:
+  inngest_data:

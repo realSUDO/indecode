@@ -58,6 +58,7 @@ services:
       - GITHUB_APP_NAME=${GITHUB_APP_NAME}
       - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
       - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
+      - INNGEST_BASE_URL=http://inngest:8288
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     expose:
@@ -110,6 +111,7 @@ services:
       - GITHUB_PRIVATE_KEY=${GITHUB_PRIVATE_KEY}
       - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
       - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
+      - INNGEST_BASE_URL=http://inngest:8288
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
@@ -152,8 +154,40 @@ services:
     ports:
       - "5433:5432"
 
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    restart: always
+    command: valkey-server --requirepass ${VALKEY_PASSWORD}
+    volumes:
+      - valkey_data:/data
+    networks:
+      - default
+
+  inngest:
+    image: inngest/inngest:latest
+    container_name: inngest
+    restart: always
+    command: inngest start --host 0.0.0.0 --port 8288
+    environment:
+      - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
+      - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
+      - INNGEST_REDIS_URI=redis://:${VALKEY_PASSWORD}@valkey:6379
+      - INNGEST_POSTGRES_URI=${DATABASE_URL}
+      - INNGEST_DEV=0
+    networks:
+      - default
+      - global_proxy_net
+    depends_on:
+      - valkey
+      - db
+    volumes:
+      - inngest_data:/home/inngest/.inngest
+
 volumes:
   pgdata:
+  valkey_data:
+  inngest_data:
 
 networks:
   default:
