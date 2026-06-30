@@ -2,14 +2,41 @@
 
 import { trpc } from "~/trpc/client";
 import { useState } from "react";
+import Script from "next/script";
 
 export default function BillingPage() {
   const { data: session, isLoading: sessionLoading } = trpc.auth.getSession.useQuery();
   const [loading, setLoading] = useState(false);
+  
+  const [couponCode, setCouponCode] = useState("");
+  const [isCouponValidating, setIsCouponValidating] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
 
   const isDev = process.env.NODE_ENV !== "production";
   const dashboardUrl = isDev ? "http://localhost:3002/dashboard" : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/dashboard`;
   const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+
+  const validateCoupon = trpc.billing.validateCoupon.useMutation({
+    onSuccess: (data) => {
+      setAppliedCoupon(data);
+      alert(`Coupon applied! ${data.discountValue}${data.discountType === 'percentage' ? '%' : '₹'} OFF`);
+    },
+    onError: (err) => {
+      setAppliedCoupon(null);
+      alert(err.message || "Invalid coupon");
+    }
+  });
+
+  const applyFullBypassCoupon = trpc.billing.applyFullBypassCoupon.useMutation({
+    onSuccess: () => {
+      alert("Successfully upgraded to Pro with 100% OFF Coupon!");
+      window.location.href = dashboardUrl;
+    },
+    onError: (err) => {
+      alert(err.message || "Failed to redeem coupon");
+      setLoading(false);
+    }
+  });
 
   const verifyPayment = trpc.billing.verifyPayment.useMutation({
     onSuccess: () => {
@@ -73,14 +100,32 @@ export default function BillingPage() {
     );
   }
 
+  const handleApplyCoupon = () => {
+    if (!couponCode) return;
+    setIsCouponValidating(true);
+    validateCoupon.mutate({ code: couponCode }, {
+      onSettled: () => setIsCouponValidating(false)
+    });
+  };
+
   const handleUpgrade = async () => {
     setLoading(true);
-    // Amount is in paise, e.g., 190000 = $19 or ₹1900
-    await createOrder.mutateAsync({ amount: 190000 });
+
+    if (appliedCoupon && appliedCoupon.discountType === "percentage" && appliedCoupon.discountValue === 100) {
+      await applyFullBypassCoupon.mutateAsync({ code: appliedCoupon.code });
+      return; 
+    }
+    
+    // Amount is in paise, ₹999 = 99900 paise
+    await createOrder.mutateAsync({ 
+      amount: 99900,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined
+    });
   };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Billing & Plans</h1>
@@ -91,7 +136,7 @@ export default function BillingPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <h3 className="text-xl font-bold mb-2">Free Plan</h3>
             <p className="text-gray-400 text-sm mb-6">Perfect for getting started and exploring Indecode.</p>
-            <div className="text-3xl font-bold mb-6">$0<span className="text-lg text-gray-500 font-normal">/mo</span></div>
+            <div className="text-3xl font-bold mb-6">₹0<span className="text-lg text-gray-500 font-normal">/mo</span></div>
             <ul className="space-y-3 mb-8 text-sm text-gray-300">
               <li>✓ Basic AI code reviews</li>
               <li>✓ Up to 3 projects</li>
@@ -102,23 +147,44 @@ export default function BillingPage() {
             </button>
           </div>
 
-          <div className="bg-gradient-to-b from-indigo-900/40 to-gray-900 border border-indigo-500/30 rounded-2xl p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-b from-indigo-900/40 to-gray-900 border border-indigo-500/30 rounded-2xl p-6 relative overflow-hidden flex flex-col">
             <div className="absolute top-0 right-0 bg-indigo-600 text-xs font-bold px-3 py-1 rounded-bl-lg">POPULAR</div>
             <h3 className="text-xl font-bold mb-2">Pro Plan</h3>
             <p className="text-gray-400 text-sm mb-6">For professional developers and teams.</p>
-            <div className="text-3xl font-bold mb-6">$19<span className="text-lg text-gray-500 font-normal">/mo</span></div>
-            <ul className="space-y-3 mb-8 text-sm text-gray-300">
+            <div className="text-3xl font-bold mb-6">₹999<span className="text-lg text-gray-500 font-normal">/mo</span></div>
+            <ul className="space-y-3 mb-8 text-sm text-gray-300 flex-1">
               <li>✓ Unlimited AI code reviews</li>
               <li>✓ Unlimited projects</li>
               <li>✓ Priority support</li>
               <li>✓ Advanced GitHub integrations</li>
             </ul>
+            
+            <div className="mt-4 mb-4 flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Coupon Code" 
+                className="flex-1 bg-black border border-gray-800 rounded-lg px-3 py-2 text-sm"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                disabled={!!appliedCoupon || isCouponValidating}
+              />
+              {appliedCoupon ? (
+                <button className="px-3 py-2 bg-gray-800 text-white rounded-lg text-sm" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>
+                  Remove
+                </button>
+              ) : (
+                <button className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm" onClick={handleApplyCoupon} disabled={!couponCode || isCouponValidating}>
+                  {isCouponValidating ? "..." : "Apply"}
+                </button>
+              )}
+            </div>
+
             <button 
               onClick={handleUpgrade}
               disabled={loading}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors"
             >
-              {loading ? "Processing..." : "Upgrade to Pro"}
+              {loading ? "Processing..." : `Upgrade to Pro ${appliedCoupon ? `(${appliedCoupon.discountValue}${appliedCoupon.discountType === 'percentage' ? '%' : '₹'} OFF)` : ''}`}
             </button>
           </div>
         </div>

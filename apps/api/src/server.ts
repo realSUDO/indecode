@@ -63,11 +63,12 @@ app.post("/api/webhooks/razorpay", express.raw({ type: "application/json" }), as
 
   try {
     const event = JSON.parse(rawBody);
+    logger.info(`[Webhook] Received Razorpay Event: ${event.event}`, { eventId: event.id });
     
-    // Process only payment.captured or subscription.charged for now
-    if (event.event === "payment.captured" || event.event === "subscription.charged") {
-      // Razorpay entity might have email or contact in payload depending on what was collected
-      const email = event.payload?.payment?.entity?.email;
+    // Process payment.captured, order.paid, or subscription.charged
+    if (event.event === "payment.captured" || event.event === "order.paid" || event.event === "subscription.charged" || event.event === "payment.authorized") {
+      const paymentEntity = event.payload?.payment?.entity;
+      const email = paymentEntity?.email;
       
       if (email) {
         const user = await db.query.users.findFirst({
@@ -75,26 +76,43 @@ app.post("/api/webhooks/razorpay", express.raw({ type: "application/json" }), as
         });
 
         if (user) {
-          await db.update(users).set({
-            plan: "pro",
-            subscriptionStatus: "active"
-          }).where(eq(users.id, user.id));
+          // If already pro, just log it. If not, upgrade.
+          if (user.plan !== "pro") {
+            await db.update(users).set({
+              plan: "pro",
+              subscriptionStatus: "active"
+            }).where(eq(users.id, user.id));
 
-          await db.insert(auditLogs).values({
-            actorId: user.id,
-            targetUserId: user.id,
-            action: "webhook_plan_upgraded",
-            metadata: { event: event.event, paymentId: event.payload.payment.entity.id }
-          });
+            await db.insert(auditLogs).values({
+              actorId: user.id,
+              targetUserId: user.id,
+              action: "webhook_plan_upgraded",
+              metadata: { event: event.event, paymentId: paymentEntity.id }
+            });
 
-          await invalidateCache(`user:profile:${user.id}`);
+            await invalidateCache(`user:profile:${user.id}`);
+            logger.info(`[Webhook] Upgraded user ${email} to Pro via event ${event.event}`);
+          } else {
+            logger.info(`[Webhook] User ${email} is already Pro, ignoring event ${event.event}`);
+          }
+        } else {
+          logger.warn(`[Webhook] Received payment for unknown email: ${email}`);
         }
+      } else {
+        logger.warn(`[Webhook] No email found in payload for event ${event.event}`);
       }
+    } else if (event.event === "payment.failed") {
+      logger.warn(`[Webhook] Payment Failed Event Received: ${event.payload?.payment?.entity?.id}. Reason: ${event.payload?.payment?.entity?.error_description}`);
+      // In the future, we could email the user here or mark the invoice as failed
+    } else if (event.event === "subscription.cancelled" || event.event === "subscription.halted") {
+      const email = event.payload?.subscription?.entity?.customer_notify ? event.payload?.subscription?.entity?.email : undefined; // Try to extract if available or from customer fetch
+      // Currently, we don't have the customer email directly in the subscription payload sometimes, but if we log the event we can track it.
+      logger.info(`[Webhook] Subscription Cancelled/Halted: ${event.payload?.subscription?.entity?.id}`);
     }
     
-    res.status(200).send("Webhook received");
+    res.status(200).send("Webhook received and processed");
   } catch (err) {
-    logger.error("Error processing webhook:", err);
+    logger.error("[Webhook Error]: Error processing webhook:", err);
     res.status(500).send("Webhook processing failed");
   }
 });

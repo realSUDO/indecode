@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Tag } from "lucide-react";
 import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
 import Script from "next/script";
+import { Input } from "~/components/ui/input";
 
 const TIERS = [
   {
     name: "Free",
     id: "free",
-    price: "$0",
+    price: "₹0",
     description: "Perfect for individuals and small prototypes.",
     features: [
       "Access to Llama-3.1-70b",
@@ -23,7 +24,7 @@ const TIERS = [
   {
     name: "Pro",
     id: "pro",
-    price: "$29",
+    price: "₹999",
     description: "For professionals needing maximum intelligence.",
     features: [
       "Access to GPT-4o & GPT-4o-mini",
@@ -56,9 +57,36 @@ declare global {
 
 export function PricingCards({ currentPlan }: { currentPlan: string }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [isCouponValidating, setIsCouponValidating] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+
   const utils = trpc.useUtils();
   
   const createOrder = trpc.billing.createOrder.useMutation();
+  const validateCoupon = trpc.billing.validateCoupon.useMutation({
+    onSuccess: (data) => {
+      setAppliedCoupon(data);
+      toast.success(`Coupon applied! ${data.discountValue}${data.discountType === 'percentage' ? '%' : '₹'} OFF`);
+    },
+    onError: (err) => {
+      setAppliedCoupon(null);
+      toast.error(err.message || "Invalid coupon");
+    }
+  });
+
+  const applyFullBypassCoupon = trpc.billing.applyFullBypassCoupon.useMutation({
+    onSuccess: () => {
+      utils.auth.getSession.invalidate();
+      toast.success("Successfully upgraded to Pro with 100% OFF Coupon!");
+      setIsLoading(false);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to redeem coupon");
+      setIsLoading(false);
+    }
+  });
+
   const verifyPayment = trpc.billing.verifyPayment.useMutation({
     onSuccess: () => {
       utils.auth.getSession.invalidate();
@@ -69,14 +97,33 @@ export function PricingCards({ currentPlan }: { currentPlan: string }) {
     }
   });
 
+  const handleApplyCoupon = () => {
+    if (!couponCode) return;
+    setIsCouponValidating(true);
+    validateCoupon.mutate({ code: couponCode }, {
+      onSettled: () => setIsCouponValidating(false)
+    });
+  };
+
   const handleUpgradeToPro = async () => {
     try {
       setIsLoading(true);
+
+      // Handle 100% discount full bypass
+      if (appliedCoupon && appliedCoupon.discountType === "percentage" && appliedCoupon.discountValue === 100) {
+        await applyFullBypassCoupon.mutateAsync({ code: appliedCoupon.code });
+        return; // Skip razorpay flow
+      }
       
-      const order = await createOrder.mutateAsync({ amount: 2900 }); // $29 -> 2900 cents/paise (assuming INR/USD conversion handled differently, let's just use 2900 for example, actually Razorpay uses paise for INR, so 2900 = ₹29. Let's make it 290000 for ₹2900)
+      const orderAmount = 99900; // ₹999 in paise
+      
+      const order = await createOrder.mutateAsync({ 
+        amount: orderAmount,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined 
+      });
       
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: "Indecode",
@@ -102,7 +149,9 @@ export function PricingCards({ currentPlan }: { currentPlan: string }) {
     } catch (error: any) {
       toast.error(error.message || "Failed to initiate checkout");
     } finally {
-      setIsLoading(false);
+      if (!applyFullBypassCoupon.isPending) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -143,7 +192,30 @@ export function PricingCards({ currentPlan }: { currentPlan: string }) {
                 ))}
               </ul>
 
-              <div className="mt-8">
+              <div className="mt-8 space-y-4">
+                {tier.id === "pro" && !isActive && (
+                  <div className="flex gap-2 items-center">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Coupon Code" 
+                        className="pl-9" 
+                        value={couponCode} 
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        disabled={!!appliedCoupon || isCouponValidating}
+                      />
+                    </div>
+                    {appliedCoupon ? (
+                      <Button variant="outline" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>
+                        Remove
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" onClick={handleApplyCoupon} disabled={!couponCode || isCouponValidating}>
+                        {isCouponValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {isActive ? (
                   <Button className="w-full" variant="outline" disabled>
                     Current Plan
@@ -155,7 +227,7 @@ export function PricingCards({ currentPlan }: { currentPlan: string }) {
                     disabled={isLoading || currentPlan === "enterprise"}
                   >
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Upgrade to Pro
+                    Upgrade to Pro {appliedCoupon && `(${appliedCoupon.discountValue}${appliedCoupon.discountType === 'percentage' ? '%' : '₹'} OFF)`}
                   </Button>
                 ) : tier.id === "enterprise" ? (
                   <Button 
