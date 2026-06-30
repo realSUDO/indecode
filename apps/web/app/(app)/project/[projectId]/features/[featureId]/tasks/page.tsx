@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Circle, PlayCircle, Loader2 } from "lucide-react";
@@ -17,7 +17,10 @@ type Task = {
 
 export default function TasksPage() {
   const params = useParams();
+  const router = useRouter();
   const featureId = params.featureId as string;
+  const projectId = params.projectId as string;
+  const utils = trpc.useUtils();
 
   const { data: feature } = trpc.featureRequest.getById.useQuery({ featureRequestId: featureId });
   
@@ -28,10 +31,17 @@ export default function TasksPage() {
 
   const { data: taskList, isLoading } = trpc.task.listByFeature.useQuery(
     { featureRequestId: featureId },
-    { refetchInterval: shouldPoll ? 2000 : 10000 }
+    // Always poll while implementing or planning; slow poll otherwise
+    { refetchInterval: (shouldPoll || isImplementing) ? 2000 : 10000 }
   );
 
-  const implementMutation = trpc.featureRequest.triggerImplementation.useMutation();
+  const implementMutation = trpc.featureRequest.triggerImplementation.useMutation({
+    onSuccess: () => {
+      // Immediately redirect to the timeline view so user sees live progress
+      utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+      router.push(`/project/${projectId}/features/${featureId}`);
+    },
+  });
 
   if (isLoading && !taskList) {
     return (
@@ -138,7 +148,7 @@ export default function TasksPage() {
             disabled={implementMutation.isPending}
             className="px-6 py-2.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-sm font-semibold transition-all duration-300 disabled:opacity-50"
           >
-            {implementMutation.isPending ? "Starting AI Agent..." : "Implement with AI ✨"}
+            {implementMutation.isPending ? "Starting AI Agent..." : "Implement with AI"}
           </button>
         )}
       </div>

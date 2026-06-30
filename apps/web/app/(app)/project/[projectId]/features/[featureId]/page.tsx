@@ -26,11 +26,19 @@ const STATUS_LABELS: Record<string, string> = {
 
 // Old PIPELINE_TABS removed in favor of ExecutionTimeline
 
-function getNextAction(status: string, projectId: string, featureId: string, router: ReturnType<typeof useRouter>) {
+function getNextAction(
+  status: string,
+  projectId: string,
+  featureId: string,
+  router: ReturnType<typeof useRouter>,
+  prdReady: boolean,
+) {
   if (status === "submitted" || status === "discovery") {
     return { label: "Open Discovery Chat →", action: () => router.push(`/project/${projectId}/features/${featureId}/discovery`) };
   }
   if (status === "prd_draft") {
+    // Only show Review PRD once it's actually generated
+    if (!prdReady) return null;
     return { label: "Review PRD →", action: () => router.push(`/project/${projectId}/features/${featureId}/prd`) };
   }
   if (status === "prd_approved" || status === "planning") {
@@ -52,13 +60,30 @@ export default function FeatureDetailPage() {
   const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery(
     { featureRequestId: featureId },
     {
+      // Poll aggressively whenever an AI background process could be running
       refetchInterval: (query: any) => {
-        const status = query?.state?.data?.status || query?.status;
-        // Poll aggressively when an AI background process is running
-        return (status === "prd_draft" || status === "planning") ? 2000 : false;
+        const status = query?.state?.data?.status;
+        const activeStatuses = ["submitted", "discovery", "prd_draft", "planning", "in_progress", "review"];
+        return activeStatuses.includes(status) ? 2000 : false;
       }
     }
   );
+
+  // Fetch PRD status so we know whether to show "Review PRD" button
+  const { data: prd } = trpc.prd.getByFeature.useQuery(
+    { featureRequestId: featureId },
+    {
+      enabled: feature?.status === "prd_draft",
+      refetchInterval: (query: any) => {
+        const prdData = query?.state?.data;
+        if (!prdData) return 2000; // No PRD yet, keep polling
+        if (prdData?.status === "draft") return 2000; // Still generating
+        return false;
+      }
+    }
+  );
+
+  const prdReady = !!(prd?.content && prd.status !== "draft");
 
   if (isLoading) {
     return (
@@ -91,7 +116,7 @@ export default function FeatureDetailPage() {
   }
 
   const statusStyle = STATUS_STYLES[feature.status] ?? STATUS_STYLES.submitted;
-  const nextAction = getNextAction(feature.status, projectId, featureId, router);
+  const nextAction = getNextAction(feature.status, projectId, featureId, router, prdReady);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 animate-in fade-in duration-500">
@@ -162,10 +187,12 @@ export default function FeatureDetailPage() {
               {({
                 submitted: "Start chatting with the AI PM to gather requirements.",
                 discovery: "The AI PM is ready for your next message.",
-                prd_draft: "AI is generating the PRD. You can review it once it completes, or view the draft now.",
+                prd_draft: prdReady
+                  ? "PRD is ready. Review and approve it to begin task planning."
+                  : "AI is generating the PRD. This usually takes 30–60 seconds...",
                 prd_approved: "PRD approved! Tasks will now be generated on the Kanban board.",
                 planning: "AI is generating engineering tasks from your PRD...",
-                in_progress: "Your Kanban board is ready for development.",
+                in_progress: "AI is implementing your feature. Watch the Kanban board for live updates.",
               } as Record<string, string>)[feature.status as string] ?? "Continue your workflow."}
             </p>
           </div>

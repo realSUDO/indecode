@@ -63,20 +63,30 @@ export default function PRDPage() {
 
   const utils = trpc.useUtils();
   
-  const { data: feature } = trpc.featureRequest.getById.useQuery({ featureRequestId: featureId });
+  const { data: feature, refetch: refetchFeature } = trpc.featureRequest.getById.useQuery(
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const status = query?.state?.data?.status;
+        return (status === "prd_draft" || status === "planning") ? 3000 : false;
+      }
+    }
+  );
   
   const { data: prd, isLoading } = trpc.prd.getByFeature.useQuery(
     { featureRequestId: featureId },
     {
       // Poll if PRD doesn't exist yet but feature is in prd_draft, or if PRD is currently in draft (generating)
       refetchInterval: (query: any) => {
-        const prdData = query?.state?.data || query?.data;
+        const prdData = query?.state?.data;
         if (!prdData && feature?.status === "prd_draft") return 2000;
         if (prdData?.status === "draft") return 2000;
         return false;
       }
     }
   );
+
+  const isGenerating = !prd || prd.status === "draft";
 
   const updateMutation = trpc.prd.update.useMutation({
     onMutate: async (newPrd) => {
@@ -250,7 +260,7 @@ export default function PRDPage() {
 
               <button
                 onClick={handleApprove}
-                disabled={approveMutation.isPending || editMode}
+                disabled={approveMutation.isPending || editMode || isGenerating}
                 className="px-4 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {approveMutation.isPending ? (
