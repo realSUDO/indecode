@@ -4,7 +4,7 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nextCookies } from "better-auth/next-js";
 
-export const auth = betterAuth({
+const baseConfig = {
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -18,7 +18,7 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-      mapProfileToUser: async (profile) => ({
+      mapProfileToUser: async (profile: any) => ({
         email: profile.email ?? `${profile.id}@users.noreply.github.com`,
         name: profile.name ?? profile.login,
       }),
@@ -28,6 +28,17 @@ export const auth = betterAuth({
     ? [`https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN}`, `https://payment.${process.env.NEXT_PUBLIC_APP_DOMAIN}`]
     : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3003/api/auth",
+  advanced: {
+    cookiePrefix: "indecode",
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: process.env.NODE_ENV === "production" ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN}` : ".localhost",
+    },
+  },
+} as const;
+
+export const auth = betterAuth({
+  ...baseConfig,
   plugins: [
     nextCookies(),
     {
@@ -43,13 +54,24 @@ export const auth = betterAuth({
       }
     }
   ],
-  advanced: {
-    cookiePrefix: "indecode",
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: process.env.NODE_ENV === "production" ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN}` : ".localhost",
-    },
-  },
+});
+
+export const expressAuth = betterAuth({
+  ...baseConfig,
+  plugins: [
+    {
+      id: "debug-logger",
+      hooks: {
+        before: [{
+          matcher: (context) => true,
+          handler: async (context) => {
+            console.log("[BetterAuth Hook] Received request for:", context.request?.url);
+            return { context };
+          }
+        }]
+      }
+    }
+  ],
 });
 
 export type Auth = typeof auth;
