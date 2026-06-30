@@ -3,24 +3,28 @@ import { betterFetch } from "@better-fetch/fetch";
 import type { Session } from "better-auth/types";
 
 export default async function middleware(request: NextRequest) {
+  const isDev = process.env.NODE_ENV !== "production";
+  
   const { data: session } = await betterFetch<any>(
     "/api/auth/get-session",
     {
-      baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3003",
+      baseURL: isDev ? "http://localhost:3003" : "https://auth.indecode.in",
       headers: {
         cookie: request.headers.get("cookie") || "",
       },
     },
   );
-
+  
   if (!session) {
-    return NextResponse.redirect(new URL(process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3002/sign-in", request.url));
+    const authUrl = isDev ? "http://localhost:3002/sign-in" : "https://auth.indecode.in/sign-in";
+    return NextResponse.redirect(new URL(authUrl, request.url));
   }
 
   const userRole = (session.user as any)?.role;
   if (userRole !== "admin") {
     // Redirect non-admins out of the admin panel
-    return NextResponse.redirect(new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3003", request.url));
+    const appUrl = isDev ? "http://localhost:3003" : "https://in.indecode.in";
+    return NextResponse.redirect(new URL(appUrl, request.url));
   }
 
   return NextResponse.next();
