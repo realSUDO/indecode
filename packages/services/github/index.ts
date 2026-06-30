@@ -42,6 +42,6 @@ export const getInstallationOctokit = async (installationId: number) => {
 export const getInstallUrl = (state: string) => {
   // Assume app name from env or hardcoded based on project name for now.
   // Ideally, GITHUB_APP_NAME is in env, but if missing, fallback to generic installation link.
-  const appName = process.env.GITHUB_APP_NAME || "indecode-local";
+  const appName = process.env.GITHUB_APP_NAME || "indecode-in";
   return `https://github.com/apps/${appName}/installations/new?state=${encodeURIComponent(state)}`;
 };
