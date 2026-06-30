@@ -7,16 +7,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Loader2, Plus, Lightbulb } from "lucide-react";
 
+import { RepoSelector } from "~/components/project/repo-selector";
+
 const statusColors: Record<string, string> = {
-  submitted: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  discovery: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  prd_draft: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  prd_approved: "bg-green-500/10 text-green-500 border-green-500/20",
-  planning: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-  in_progress: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  review: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-  shipped: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  submitted: "bg-white/5 text-neutral-300 border-white/10",
+  discovery: "bg-white/5 text-neutral-300 border-white/10",
+  prd_draft: "bg-white/5 text-neutral-300 border-white/10",
+  prd_approved: "bg-white/5 text-neutral-300 border-white/10",
+  planning: "bg-white/5 text-neutral-300 border-white/10",
+  in_progress: "bg-white/5 text-neutral-300 border-white/10",
+  review: "bg-white/5 text-neutral-300 border-white/10",
+  shipped: "bg-white/5 text-neutral-300 border-white/10",
 };
+
 
 const statusLabels: Record<string, string> = {
   submitted: "Submitted",
@@ -33,6 +36,7 @@ export default function FeaturesListPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.projectId as string;
+  const utils = trpc.useUtils();
 
   const { data: features, isLoading } = trpc.featureRequest.list.useQuery({
     projectId,
@@ -51,14 +55,14 @@ export default function FeaturesListPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Feature Requests</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage feature requests and track them through the delivery pipeline.
-          </p>
         </div>
-        <Button onClick={() => router.push(`/project/${projectId}/features/new`)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Feature
-        </Button>
+        <div className="flex items-center gap-4">
+          <RepoSelector projectId={projectId} />
+          <Button onClick={() => router.push(`/project/${projectId}/features/new`)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Feature
+          </Button>
+        </div>
       </div>
 
       {!features || features.length === 0 ? (
@@ -80,8 +84,11 @@ export default function FeaturesListPage() {
           {features.map((feature: any) => (
             <Card
               key={feature.id}
-              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              className="cursor-pointer border-white/5 bg-[#0A0A0A] hover:bg-[#111111] transition-all hover:border-white/10 group"
               onClick={() => router.push(`/project/${projectId}/features/${feature.id}`)}
+              onMouseEnter={() => {
+                utils.featureRequest.getById.prefetch({ featureRequestId: feature.id });
+              }}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">

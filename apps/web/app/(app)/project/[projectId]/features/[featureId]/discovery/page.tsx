@@ -9,8 +9,11 @@ import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Loader2, ArrowLeft, Send, CheckCircle2, Bot, User } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { ModelBadge } from "~/components/ui/model-badge";
+import { Textarea } from "~/components/ui/textarea";
 
 export default function DiscoveryPage() {
   const params = useParams();
@@ -70,13 +73,19 @@ export default function DiscoveryPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [session?.messages]);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = () => {
     if (!message.trim() || sendMessageMutation.isPending) return;
     sendMessageMutation.mutate({
       featureRequestId: featureId,
       message: message.trim(),
     });
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   if (sessionLoading) {
@@ -144,54 +153,74 @@ export default function DiscoveryPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-8 space-y-8">
         {initializeMutation.isPending && session.messages.length === 0 && (
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-primary" />
+          <div className="max-w-3xl mx-auto flex gap-6 animate-pulse">
+            <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
+              AI PM
             </div>
-            <div className="flex-1 bg-muted rounded-lg rounded-tl-none px-4 py-3">
-              <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 text-neutral-400">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">AI is analyzing your feature request...</span>
+                <span>Analyzing your feature request...</span>
               </div>
             </div>
           </div>
         )}
 
         {session.messages.map((msg: any) => (
-          <div key={msg.id} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              msg.role === "user" ? "bg-blue-500/10" : "bg-primary/10"
-            }`}>
-              {msg.role === "user" ? (
-                <User className="w-4 h-4 text-blue-500" />
-              ) : (
-                <Bot className="w-4 h-4 text-primary" />
-              )}
-            </div>
-            <div className={`flex-1 max-w-[80%] rounded-lg px-4 py-3 ${
-              msg.role === "user"
-                ? "bg-blue-500/10 rounded-tr-none ml-auto"
-                : "bg-muted rounded-tl-none"
-            }`}>
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-              <div className="text-xs text-muted-foreground mt-2">
-                {new Date(msg.createdAt).toLocaleTimeString()}
+          <div key={msg.id} className="border-b border-white/5 pb-8 last:border-0 last:pb-0">
+            <div className="max-w-3xl mx-auto flex gap-6">
+              <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
+                {msg.role === "user" ? "You" : "AI PM"}
+              </div>
+              <div className="flex-1 text-neutral-300">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({node, ...props}) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 mt-6 text-white" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-4 mt-6 text-white" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-4 mt-6 text-white" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4 space-y-1" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4 space-y-1" {...props} />,
+                    li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                    code: ({node, className, children, ...props}: any) => {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const isInline = !match && !className;
+                      return isInline ? (
+                        <code className="bg-white/10 px-1.5 py-0.5 rounded text-sm font-mono text-neutral-200" {...props}>{children}</code>
+                      ) : (
+                        <pre className="bg-[#0A0A0A] border border-white/10 p-4 rounded-lg overflow-x-auto mb-4 mt-2">
+                          <code className="text-sm font-mono text-neutral-300" {...props}>{children}</code>
+                        </pre>
+                      );
+                    },
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-white/20 pl-4 italic text-neutral-400 mb-4" {...props} />,
+                    table: ({node, ...props}) => <div className="overflow-x-auto mb-4"><table className="w-full text-left border-collapse" {...props} /></div>,
+                    th: ({node, ...props}) => <th className="border-b border-white/10 py-2 px-4 font-semibold text-white bg-white/5" {...props} />,
+                    td: ({node, ...props}) => <td className="border-b border-white/5 py-2 px-4" {...props} />,
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+                <div className="text-[10px] text-neutral-500 mt-4 font-medium tracking-wide">
+                  {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
               </div>
             </div>
           </div>
         ))}
 
         {sendMessageMutation.isPending && (
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-primary" />
+          <div className="max-w-3xl mx-auto flex gap-6 animate-pulse">
+            <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
+              AI PM
             </div>
-            <div className="flex-1 bg-muted rounded-lg rounded-tl-none px-4 py-3">
-              <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 text-neutral-400">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                <span>Thinking...</span>
               </div>
             </div>
           </div>
@@ -202,23 +231,26 @@ export default function DiscoveryPage() {
 
       {/* Input */}
       {!isCompleted && (
-        <div className="border-t px-4 py-3">
-          <form onSubmit={handleSend} className="flex gap-2">
-            <Input
+        <div className="border-t border-white/10 px-4 py-4 bg-[#0A0A0A]">
+          <div className="max-w-3xl mx-auto pl-[120px] relative">
+            <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your response..."
+              onKeyDown={onKeyDown}
+              placeholder="Type your response... (Shift+Enter for newline)"
               disabled={sendMessageMutation.isPending || initializeMutation.isPending}
-              className="flex-1"
+              className="min-h-[60px] max-h-[200px] resize-none pr-12 bg-white/5 border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 rounded-xl"
+              rows={1}
             />
             <Button
-              type="submit"
+              onClick={handleSend}
               size="icon"
               disabled={!message.trim() || sendMessageMutation.isPending || initializeMutation.isPending}
+              className="absolute right-3 bottom-3 h-8 w-8 bg-white text-black hover:bg-neutral-200 rounded-lg"
             >
               <Send className="w-4 h-4" />
             </Button>
-          </form>
+          </div>
         </div>
       )}
     </div>

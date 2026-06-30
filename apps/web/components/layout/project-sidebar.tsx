@@ -21,7 +21,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarFooter,
   useSidebar
@@ -42,31 +41,22 @@ export function ProjectSidebar() {
 
   return (
     <Sidebar variant="floating" collapsible="icon" className="animate-in fade-in duration-300">
-      <SidebarHeader className="p-0 pt-2">
+      <SidebarHeader className="p-0">
         <SidebarMenu>
-          <SidebarMenuItem className="px-2">
-            <SidebarMenuButton asChild tooltip="Back to Dashboard" className="text-neutral-400 hover:text-white transition-colors mb-2">
-              <Link href="/dashboard">
-                <ArrowLeft className="size-4" />
-                <span>Back to Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
-            <div className="flex items-center h-14 w-full relative overflow-hidden border-t border-white/5 px-4 transition-all duration-200 group-data-[state=collapsed]:px-3">
+            <div className="flex items-center h-14 w-full relative overflow-hidden px-4 transition-all duration-200 group-data-[state=collapsed]:px-3">
               <div 
                 className="flex items-center gap-3 flex-1 cursor-pointer"
                 onClick={() => {
                   setOpen(state === "collapsed");
                 }}
               >
-                <div className="flex aspect-square size-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white border border-white/20">
-                  <Box className="size-4" />
+                <div className="flex aspect-square size-6 shrink-0 items-center justify-center rounded-md bg-white text-black">
+                  <Box className="size-4 fill-black" />
                 </div>
                 <div className="flex flex-col flex-1 whitespace-nowrap transition-opacity duration-200 group-data-[state=collapsed]:opacity-0">
-                  <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider leading-tight">Project</span>
                   <span className="truncate font-bold text-base text-white tracking-tight leading-none">
-                    {project?.name || "..."}
+                    {project?.name || "Loading..."}
                   </span>
                 </div>
               </div>
@@ -83,11 +73,24 @@ export function ProjectSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       
-      <SidebarContent className="px-2">
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-2 mb-1 px-3">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  tooltip="Dashboard" 
+                  className="h-10 px-3 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-all mb-4 group-data-[collapsible=icon]:mb-2"
+                >
+                  <Link href="/dashboard">
+                    <ArrowLeft className="size-4" />
+                    <span className="font-medium">Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-1 px-3 group-data-[collapsible=icon]:hidden">Workspace</div>
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
@@ -98,19 +101,6 @@ export function ProjectSidebar() {
                   <Link href={`/project/${projectId}/features`}>
                     <ListTodo className="size-4 text-neutral-400" />
                     <span className="font-medium">Features</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  tooltip="Repositories"
-                  isActive={pathname.includes("/repos")}
-                  className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white"
-                >
-                  <Link href={`/project/${projectId}/repos`}>
-                    <Github className="size-4" />
-                    <span className="font-medium">Repositories</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
