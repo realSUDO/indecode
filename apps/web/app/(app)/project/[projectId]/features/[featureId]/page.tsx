@@ -63,7 +63,7 @@ export default function FeatureDetailPage() {
       // Poll aggressively whenever an AI background process could be running
       refetchInterval: (query: any) => {
         const status = query?.state?.data?.status;
-        const activeStatuses = ["submitted", "discovery", "prd_draft", "planning", "in_progress", "review"];
+        const activeStatuses = ["submitted", "discovery", "prd_draft", "planning", "implementing", "in_progress", "review"];
         return activeStatuses.includes(status) ? 2000 : false;
       }
     }

@@ -110,4 +110,26 @@ export const projectRouter = router({
         createdAt: project.createdAt.toISOString(),
       };
     }),
+
+  delete: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, input.projectId),
+      });
+
+      if (!project) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      // Ensure the user actually has access to delete this project
+      const hasAccess = await hasProjectAccess(project.id, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this project" });
+      }
+
+      await db.delete(projects).where(eq(projects.id, input.projectId));
+
+      return { success: true };
+    }),
 });

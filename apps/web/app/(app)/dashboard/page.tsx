@@ -3,14 +3,47 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { trpc } from "~/trpc/client";
-import { Loader2, Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "~/components/ui/skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CreateProjectDialog } from "~/components/project/create-project-dialog";
 
 export default function DashboardPage() {
+  const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.project.list.useQuery();
+
+  const deleteProject = trpc.project.delete.useMutation({
+    onMutate: async ({ projectId }) => {
+      // Optimistic update
+      await utils.project.list.cancel();
+      const previousProjects = utils.project.list.getData();
+      if (previousProjects) {
+        utils.project.list.setData(undefined, previousProjects.filter((p: any) => p.id !== projectId));
+      }
+      return { previousProjects };
+    },
+    onError: (err, newTodo, context) => {
+      // Rollback on error
+      if (context?.previousProjects) {
+        utils.project.list.setData(undefined, context.previousProjects);
+      }
+      toast.error("Failed to delete project");
+    },
+    onSettled: () => {
+      utils.project.list.invalidate();
+    },
+  });
+
+  const handleDelete = (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault(); // Prevent navigating to project
+    e.stopPropagation();
+    
+    if (window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      deleteProject.mutate({ projectId });
+    }
+  };
   
   return (
     <div className="flex flex-col gap-6 p-8">
@@ -56,9 +89,20 @@ export default function DashboardPage() {
               <Link href={`/project/${project.id}/features`} key={project.id} className="group outline-none">
                 <Card className="h-full bg-white/5 backdrop-blur-md border-white/10 transition-all duration-300 group-hover:bg-white/10 group-focus-visible:ring-2 group-focus-visible:ring-white/20">
                   <CardHeader>
-                    <CardTitle className="text-white group-hover:text-neutral-200 transition-colors">
-                      {project.name}
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        {project.name}
+                      </CardTitle>
+                      <button 
+                        onClick={(e) => handleDelete(e, project.id)}
+                        className="text-neutral-600 hover:text-red-500 transition-colors p-2 rounded-md hover:bg-red-500/10 opacity-0 group-hover:opacity-100"
+                        title="Delete Project"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                     <CardDescription className="line-clamp-2 text-neutral-400">
                       {project.description || "No description provided."}
                     </CardDescription>
