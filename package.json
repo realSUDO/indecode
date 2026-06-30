@@ -29,5 +29,6 @@
     "overrides": {
       "@inngest/ai": "0.1.6"
     }
-  }
+  },
+  "force-rebuild": "true"
 }
