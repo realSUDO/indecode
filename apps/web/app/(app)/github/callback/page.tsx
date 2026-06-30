@@ -4,7 +4,7 @@ import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { trpc } from "../../../_trpc/client";
+import { trpc } from "~/trpc/client";
 
 function GithubCallbackContent() {
   const router = useRouter();
