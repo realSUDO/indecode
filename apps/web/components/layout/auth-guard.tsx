@@ -4,6 +4,10 @@ import { trpc } from "~/trpc/client";
 import { useEffect } from "react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV === "development") {
+    return <>{children}</>;
+  }
+
   const { data: session, isLoading } = trpc.auth.getSession.useQuery();
 
   useEffect(() => {

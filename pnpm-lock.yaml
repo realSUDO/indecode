@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@inngest/ai': 0.1.6
+
 importers:
 
   .:
@@ -14,6 +17,9 @@ importers:
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.1.18
     devDependencies:
       prettier:
         specifier: ^3.7.4
@@ -21,6 +27,9 @@ importers:
       turbo:
         specifier: ^2.7.2
         version: 2.7.2
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
       typescript:
         specifier: 5.9.2
         version: 5.9.2
@@ -254,8 +263,8 @@ importers:
   apps/api:
     dependencies:
       '@inngest/ai':
-        specifier: ^0.1.7
-        version: 0.1.7
+        specifier: 0.1.6
+        version: 0.1.6
       '@repo/auth-core':
         specifier: workspace:^
         version: link:../../packages/auth
@@ -1397,8 +1406,8 @@ importers:
   packages/trpc:
     dependencies:
       '@inngest/ai':
-        specifier: ^0.1.7
-        version: 0.1.7
+        specifier: 0.1.6
+        version: 0.1.6
       '@openrouter/ai-sdk-provider':
         specifier: ^2.10.0
         version: 2.10.0(ai@7.0.2(zod@4.3.5))(zod@4.3.5)
@@ -2411,9 +2420,6 @@ packages:
 
   '@inngest/ai@0.1.6':
     resolution: {integrity: sha512-4hIvD87LnMFSphkbSToB1EkE9epktyZU2xUj6OFCCj/bn379KfbZbhWcCJEyso0P9Ux4vsNTxiSu9E7JSI9HCQ==}
-
-  '@inngest/ai@0.1.7':
-    resolution: {integrity: sha512-5xWatW441jacGf9czKEZdgAmkvoy7GS2tp7X8GSbdGeRXzjisHR6vM+q8DQbv6rqRsmQoCQ5iShh34MguELvUQ==}
 
   '@ioredis/commands@1.10.0':
     resolution: {integrity: sha512-UmeW7z4LfctwoQ5wkhVzgq8tXkreED2xZGpX+Bg+zA+WJFZCT6c062AfCK/Dfk81xZnnwdhJCUMkitihRaoC2Q==}
@@ -7533,11 +7539,6 @@ snapshots:
       '@types/node': 22.15.3
       typescript: 5.9.3
 
-  '@inngest/ai@0.1.7':
-    dependencies:
-      '@types/node': 22.15.3
-      typescript: 5.9.3
-
   '@ioredis/commands@1.10.0': {}
 
   '@isaacs/cliui@8.0.2':
@@ -10895,7 +10896,7 @@ snapshots:
   inngest@4.11.0(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))(express@5.2.1)(h3@1.15.1)(next@16.1.0(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(typescript@5.9.2)(zod@4.3.5):
     dependencies:
       '@bufbuild/protobuf': 2.12.1
-      '@inngest/ai': 0.1.7
+      '@inngest/ai': 0.1.6
       '@jpwilliams/waitgroup': 2.1.1
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/auto-instrumentations-node': 0.77.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))
@@ -10932,7 +10933,7 @@ snapshots:
   inngest@4.11.0(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))(express@5.2.1)(h3@1.15.1)(next@16.1.0(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(typescript@5.9.2)(zod@4.4.3):
     dependencies:
       '@bufbuild/protobuf': 2.12.1
-      '@inngest/ai': 0.1.7
+      '@inngest/ai': 0.1.6
       '@jpwilliams/waitgroup': 2.1.1
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/auto-instrumentations-node': 0.77.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))
@@ -10969,7 +10970,7 @@ snapshots:
   inngest@4.11.0(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))(express@5.2.1)(h3@1.15.1)(next@16.1.0(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(typescript@5.9.3)(zod@4.3.5):
     dependencies:
       '@bufbuild/protobuf': 2.12.1
-      '@inngest/ai': 0.1.7
+      '@inngest/ai': 0.1.6
       '@jpwilliams/waitgroup': 2.1.1
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/auto-instrumentations-node': 0.77.0(@opentelemetry/api@1.9.1)(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))
