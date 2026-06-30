@@ -37,3 +37,16 @@ sudo.indecode.in {
         reverse_proxy admin:3000
     }
 }
+
+inngest.indecode.in {
+    @blocked not remote_ip 103.172.72.186
+    abort @blocked
+
+    basicauth {
+        admin $2a$14$xX.VvkWii70w8hNvpApueuJApiQif9fRZiPGQCJw7UGpiTa8HmAvS
+    }
+
+    handle {
+        reverse_proxy inngest:8288
+    }
+}
