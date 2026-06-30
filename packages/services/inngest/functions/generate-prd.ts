@@ -55,7 +55,7 @@ export const generatePRDFunction = inngest.createFunction(
 
       if (existing) {
         const [updated] = await db.update(prds)
-          .set({ content: prdContent, status: "draft", version: existing.version + 1 })
+          .set({ content: prdContent, status: "in_review", version: existing.version + 1 })
           .where(eq(prds.id, existing.id))
           .returning();
         return updated;
@@ -64,7 +64,7 @@ export const generatePRDFunction = inngest.createFunction(
       const [newPRD] = await db.insert(prds).values({
         featureRequestId,
         content: prdContent,
-        status: "draft",
+        status: "in_review",
         version: 1,
       }).returning();
       return newPRD;

@@ -80,13 +80,14 @@ export default function PRDPage() {
       refetchInterval: (query: any) => {
         const prdData = query?.state?.data;
         if (!prdData && feature?.status === "prd_draft") return 2000;
-        if (prdData?.status === "draft") return 2000;
+        if (prdData?.status === "draft" && (!prdData.content || prdData.content.length < 50)) return 2000; // Still generating
         return false;
       }
     }
   );
 
-  const isGenerating = !prd || prd.status === "draft";
+  // If the PRD has substantial content, consider it generated even if stuck in draft status
+  const isGenerating = !prd || (prd.status === "draft" && (!prd.content || prd.content.length < 50));
 
   const updateMutation = trpc.prd.update.useMutation({
     onMutate: async (newPrd) => {
