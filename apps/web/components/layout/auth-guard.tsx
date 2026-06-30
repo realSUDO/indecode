@@ -9,7 +9,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && !session?.user) {
       const isDev = process.env.NODE_ENV !== "production";
-      const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+      const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
       window.location.href = signInUrl;
     }
   }, [isLoading, session]);
