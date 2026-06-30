@@ -54,19 +54,19 @@ export const projectRouter = router({
       const userOrgs = await db.select({ orgId: organizationMembers.organizationId })
         .from(organizationMembers)
         .where(eq(organizationMembers.userId, userId));
-      
+
       const orgIds = userOrgs.map(o => o.orgId);
 
       // Build where condition
       const conditions = [];
-      
+
       if (input?.organizationId) {
         if (!orgIds.includes(input.organizationId)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this organization" });
         }
         conditions.push(eq(projects.organizationId, input.organizationId));
       } else {
-        const baseCondition = orgIds.length > 0 
+        const baseCondition = orgIds.length > 0
           ? or(eq(projects.userId, userId), inArray(projects.organizationId, orgIds))
           : eq(projects.userId, userId);
         conditions.push(baseCondition);

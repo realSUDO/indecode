@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@inngest/ai':
+        specifier: 0.1.6
+        version: 0.1.6
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -250,6 +253,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@inngest/ai':
+        specifier: ^0.1.7
+        version: 0.1.7
       '@repo/auth-core':
         specifier: workspace:^
         version: link:../../packages/auth
@@ -1390,6 +1396,9 @@ importers:
 
   packages/trpc:
     dependencies:
+      '@inngest/ai':
+        specifier: ^0.1.7
+        version: 0.1.7
       '@openrouter/ai-sdk-provider':
         specifier: ^2.10.0
         version: 2.10.0(ai@7.0.2(zod@4.3.5))(zod@4.3.5)
@@ -2399,6 +2408,9 @@ packages:
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
+
+  '@inngest/ai@0.1.6':
+    resolution: {integrity: sha512-4hIvD87LnMFSphkbSToB1EkE9epktyZU2xUj6OFCCj/bn379KfbZbhWcCJEyso0P9Ux4vsNTxiSu9E7JSI9HCQ==}
 
   '@inngest/ai@0.1.7':
     resolution: {integrity: sha512-5xWatW441jacGf9czKEZdgAmkvoy7GS2tp7X8GSbdGeRXzjisHR6vM+q8DQbv6rqRsmQoCQ5iShh34MguELvUQ==}
@@ -7515,6 +7527,11 @@ snapshots:
 
   '@img/sharp-win32-x64@0.34.5':
     optional: true
+
+  '@inngest/ai@0.1.6':
+    dependencies:
+      '@types/node': 22.15.3
+      typescript: 5.9.3
 
   '@inngest/ai@0.1.7':
     dependencies:

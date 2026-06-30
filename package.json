@@ -20,6 +20,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@inngest/ai": "0.1.6",
     "dotenv-cli": "^11.0.0"
   }
 }

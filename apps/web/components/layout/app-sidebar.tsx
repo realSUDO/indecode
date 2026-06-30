@@ -8,7 +8,8 @@ import {
   LayoutDashboard,
   Box,
   CreditCard,
-  PanelLeftClose
+  PanelLeftClose,
+  Plus
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,6 +27,7 @@ import {
 import { trpc } from "~/trpc/client";
 import { NavUser } from "./nav-user";
 import { ProjectSidebar } from "./project-sidebar";
+import { CreateProjectDialog } from "~/components/project/create-project-dialog";
 
 function IndecodeLogo() {
   return (
@@ -98,31 +100,30 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       
-      <SidebarContent className="px-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === "/dashboard"} className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white">
-              <Link href="/dashboard">
-                <LayoutDashboard className="size-4" />
-                <span className="font-medium">Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Billing" isActive={pathname === "/billing"} className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white">
-              <Link href="/billing">
-                <CreditCard className="size-4" />
-                <span className="font-medium">Billing</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-1 px-3">Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === "/dashboard"} className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white">
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="size-4" />
+                    <span className="font-medium">Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Billing" isActive={pathname === "/billing"} className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white mb-2 group-data-[collapsible=icon]:mb-0">
+                  <Link href="/billing">
+                    <CreditCard className="size-4" />
+                    <span className="font-medium">Billing</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-1 px-3 group-data-[collapsible=icon]:hidden">Projects</div>
+              
               {projects?.map((project: any) => (
                 <SidebarMenuItem key={project.id}>
                   <SidebarMenuButton asChild tooltip={project.name} isActive={pathname.includes(`/project/${project.id}`)} className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white">
@@ -133,6 +134,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
               {projects && projects.length === 0 && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="No projects" className="h-10 px-3 rounded-lg">
@@ -140,6 +142,17 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              
+              <SidebarMenuItem>
+                <CreateProjectDialog>
+                  <SidebarMenuButton asChild tooltip="Create Project" className="h-10 px-3 rounded-lg text-neutral-400 hover:text-white cursor-pointer mt-1 border border-dashed border-white/10 hover:bg-white/5 hover:border-white/20 transition-all">
+                    <button>
+                      <Plus className="size-4" />
+                      <span className="font-medium">Create Project</span>
+                    </button>
+                  </SidebarMenuButton>
+                </CreateProjectDialog>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

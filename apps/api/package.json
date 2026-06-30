@@ -21,6 +21,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@inngest/ai": "^0.1.7",
     "@repo/auth-core": "workspace:^",
     "@repo/database": "workspace:^",
     "@repo/logger": "workspace:*",

@@ -7,67 +7,21 @@ import { Loader2, Plus } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { toast } from "sonner";
+import { CreateProjectDialog } from "~/components/project/create-project-dialog";
 
 export default function DashboardPage() {
-  const utils = trpc.useUtils();
-  const router = useRouter();
   const { data: projects, isLoading } = trpc.project.list.useQuery();
   
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-
-  const createProject = trpc.project.create.useMutation({
-    onSuccess: (data) => {
-      toast.success("Project created successfully");
-      utils.project.list.invalidate();
-      setIsDialogOpen(false);
-      setNewProjectName("");
-      router.push(`/project/${data.id}/repos`);
-    },
-    onError: (err) => {
-      toast.error(err.message || "Failed to create project");
-    }
-  });
-
-  const handleCreateProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim()) return;
-    createProject.mutate({ name: newProjectName });
-  };
-
   return (
     <div className="flex flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Project
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create a New Project</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateProject} className="flex flex-col gap-4 mt-4">
-              <Input 
-                placeholder="Project Name" 
-                value={newProjectName} 
-                onChange={(e) => setNewProjectName(e.target.value)} 
-                disabled={createProject.isPending}
-                required
-              />
-              <Button type="submit" disabled={createProject.isPending || !newProjectName.trim()}>
-                {createProject.isPending ? "Creating..." : "Create Project"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateProjectDialog>
+          <Button className="bg-white text-black hover:bg-neutral-200 font-medium">
+            <Plus className="w-4 h-4 mr-2" />
+            New Project
+          </Button>
+        </CreateProjectDialog>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -100,12 +54,12 @@ export default function DashboardPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project: any) => (
               <Link href={`/project/${project.id}/features`} key={project.id} className="group outline-none">
-                <Card className="h-full bg-gray-950 border-gray-800 transition-all duration-300 group-hover:bg-gray-900 group-focus-visible:ring-2 group-focus-visible:ring-indigo-500">
+                <Card className="h-full bg-white/5 backdrop-blur-md border-white/10 transition-all duration-300 group-hover:bg-white/10 group-focus-visible:ring-2 group-focus-visible:ring-white/20">
                   <CardHeader>
-                    <CardTitle className="text-white group-hover:text-indigo-400 transition-colors">
+                    <CardTitle className="text-white group-hover:text-neutral-200 transition-colors">
                       {project.name}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="line-clamp-2 text-neutral-400">
                       {project.description || "No description provided."}
                     </CardDescription>
                   </CardHeader>
@@ -114,19 +68,21 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-gray-800 bg-gray-950/50">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-6">
-              <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-white/10 bg-white/5 backdrop-blur-sm">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">No projects yet</h3>
-            <p className="text-gray-400 max-w-sm mb-8">
+            <p className="text-neutral-400 max-w-sm mb-8">
               Get started by creating your first project to organize your feature requests and engineering workflows.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] transition-all">
-              Create your first project
-            </Button>
+            <CreateProjectDialog>
+              <Button className="px-6 py-2.5 bg-white text-black hover:bg-neutral-200 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] transition-all font-semibold">
+                Create your first project
+              </Button>
+            </CreateProjectDialog>
           </div>
         )}
       </div>

@@ -14,7 +14,6 @@ export function AppHeader() {
       <div className="flex flex-1 items-center justify-between">
         <div className="flex items-center gap-2 px-3">
           {/* Breadcrumbs can go here in the future */}
-          <span className="text-sm font-medium">Dashboard</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
