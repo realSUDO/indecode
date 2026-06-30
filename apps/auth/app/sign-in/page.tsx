@@ -7,7 +7,10 @@ import { authClient } from "~/lib/auth-client";
 
 export default function SignInPage() {
   const handleSignIn = async () => {
-    const dashboardUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3003") + "/dashboard";
+    const isDev = process.env.NODE_ENV !== "production";
+    const dashboardUrl = isDev 
+      ? "http://localhost:3003/dashboard"
+      : "https://in.indecode.in/dashboard";
 
     await authClient.signIn.social({
       provider: "github",

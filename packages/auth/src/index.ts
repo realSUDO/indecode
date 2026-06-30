@@ -39,7 +39,13 @@ const baseConfig = {
     },
   },
   trustedOrigins: process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_APP_URL?.includes("localhost")
-    ? [`https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN}`, `https://payment.${process.env.NEXT_PUBLIC_APP_DOMAIN}`]
+    ? [
+        `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN}`, 
+        `https://payment.${process.env.NEXT_PUBLIC_APP_DOMAIN}`,
+        `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN}`,
+        `https://sudo.${process.env.NEXT_PUBLIC_APP_DOMAIN}`,
+        `https://${process.env.NEXT_PUBLIC_APP_DOMAIN}`
+      ]
     : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", process.env.NEXT_PUBLIC_APP_URL || ""],
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3003/api/auth",
   advanced: {
