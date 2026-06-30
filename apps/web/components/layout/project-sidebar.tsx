@@ -26,6 +26,8 @@ import {
   useSidebar
 } from "~/components/ui/sidebar";
 import { trpc } from "~/trpc/client";
+import { NavUser } from "./nav-user";
+import { SidebarUsage } from "./sidebar-usage";
 
 
 
@@ -121,6 +123,11 @@ export function ProjectSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarUsage />
+        <NavUser />
+      </SidebarFooter>
     </Sidebar>
   );
 }

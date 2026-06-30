@@ -27,6 +27,7 @@ import {
 import { trpc } from "~/trpc/client";
 import { NavUser } from "./nav-user";
 import { ProjectSidebar } from "./project-sidebar";
+import { SidebarUsage } from "./sidebar-usage";
 import { CreateProjectDialog } from "~/components/project/create-project-dialog";
 
 function IndecodeLogo() {
@@ -157,6 +158,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarUsage />
+        <NavUser />
+      </SidebarFooter>
 
     </Sidebar>
   );

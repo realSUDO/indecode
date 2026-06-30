@@ -18,8 +18,25 @@ export const authRouter = router({
     }),
   getSession: protectedProcedure
     .query(async ({ ctx }) => {
-      // Return the mock user we inject in trpc.ts, or null
-      return { user: (ctx as any).user || null };
+      const { db } = await import("@repo/database");
+      const { users, featureRequests } = await import("@repo/database/schema");
+      const { eq, count } = await import("drizzle-orm");
+
+      const dbUser = await db.query.users.findFirst({
+        where: eq(users.id, ctx.user.id)
+      });
+
+      const featureCountRes = await db.select({ count: count() }).from(featureRequests).where(eq(featureRequests.userId, ctx.user.id));
+      const featuresCreated = featureCountRes[0]?.count || 0;
+
+      return { 
+        user: {
+          ...ctx.user,
+          plan: dbUser?.plan || 'free',
+          totalExecutions: dbUser?.totalExecutions || 0,
+          featuresCreated
+        } 
+      };
     }),
   completeOnboarding: protectedProcedure
     .input(z.object({
