@@ -46,12 +46,17 @@ export function ExecutionTimeline({
   const currentIdx = STATUS_ORDER.indexOf(currentStatus);
 
   let activeStageIndex = 0;
-  for (let i = STAGES.length - 1; i >= 0; i--) {
-    const stage = STAGES[i]!;
-    const minStatusForStageIdx = Math.min(...stage.activeFor.map(s => STATUS_ORDER.indexOf(s)));
-    if (currentIdx >= minStatusForStageIdx) {
-      activeStageIndex = i;
-      break;
+  
+  if (currentStatus === "shipped") {
+    activeStageIndex = STAGES.length;
+  } else {
+    for (let i = STAGES.length - 1; i >= 0; i--) {
+      const stage = STAGES[i]!;
+      const minStatusForStageIdx = Math.min(...stage.activeFor.map(s => STATUS_ORDER.indexOf(s)));
+      if (currentIdx >= minStatusForStageIdx) {
+        activeStageIndex = i;
+        break;
+      }
     }
   }
 
@@ -61,7 +66,8 @@ export function ExecutionTimeline({
   const padding = 40;
   const usableWidth = width - padding * 2;
   const gap = usableWidth / (STAGES.length - 1);
-  const activeWidth = (activeStageIndex / (STAGES.length - 1)) * usableWidth;
+  const clampedActiveIndex = Math.min(activeStageIndex, STAGES.length - 1);
+  const activeWidth = (clampedActiveIndex / (STAGES.length - 1)) * usableWidth;
 
   return (
     <div className="w-full py-12 flex justify-center overflow-x-auto no-scrollbar">
