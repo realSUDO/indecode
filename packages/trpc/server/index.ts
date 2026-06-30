@@ -11,6 +11,8 @@ import { pullRequestRouter } from "./routes/pull-request/route";
 import { reviewRouter } from "./routes/review/route";
 import { billingRouter } from "./routes/billing/route";
 
+import { adminRouter } from "./routes/admin/route";
+
 export const serverRouter = router({
   auth: authRouter,
   github: githubRouter,
@@ -22,6 +24,7 @@ export const serverRouter = router({
   pullRequest: pullRequestRouter,
   review: reviewRouter,
   billing: billingRouter,
+  admin: adminRouter,
 });
 
 export { createContext } from "./context";
