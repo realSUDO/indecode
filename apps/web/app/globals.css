@@ -80,9 +80,9 @@
 }
 
 .dark {
-  --background: oklch(0.13 0 0);
+  --background: transparent;
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.16 0 0);
+  --card: oklch(0.16 0 0 / 60%);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.16 0 0);
   --popover-foreground: oklch(0.985 0 0);
@@ -103,7 +103,7 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.13 0 0);
+  --sidebar: oklch(0.13 0 0 / 15%);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.6 0.118 284.704);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -119,5 +119,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--twinkle-opacity, 1); }
+    50% { opacity: calc(var(--twinkle-opacity, 1) * 0.2); }
+  }
+  .animate-twinkle {
+    animation: twinkle 4s ease-in-out infinite;
   }
 }

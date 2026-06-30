@@ -17,14 +17,17 @@ export const metadata: Metadata = {
   description: "AI-Powered Code Reviews",
 };
 
+import { SpaceBackground } from "~/components/layout/space-background";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark scroll-smooth bg-black text-white">
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-black text-white min-h-screen`}>
+    <html lang="en" suppressHydrationWarning className="dark scroll-smooth text-white">
+      <body className={`${geistSans.variable} ${geistMono.variable} text-white min-h-screen relative`}>
+        <SpaceBackground />
         <GlobalProviders>{children}</GlobalProviders>
       </body>
     </html>

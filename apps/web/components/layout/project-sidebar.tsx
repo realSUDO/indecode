@@ -8,7 +8,10 @@ import {
   Settings, 
   MessageSquare,
   Github,
-  ListTodo
+  ListTodo,
+  Box,
+  ArrowLeft,
+  PanelLeftClose
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,45 +23,69 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarFooter,
+  useSidebar
 } from "~/components/ui/sidebar";
 import { trpc } from "~/trpc/client";
+
+import { NavUser } from "./nav-user";
 
 export function ProjectSidebar() {
   const params = useParams();
   const pathname = usePathname();
   const projectId = params.projectId as string;
+  const { setOpen, state } = useSidebar();
   
   const { data: project } = trpc.project.getById.useQuery({ projectId }, {
     enabled: !!projectId
   });
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon" className="animate-in fade-in duration-300">
-      <SidebarHeader>
-        <div className="flex flex-col gap-2 px-4 py-3">
-          <Link 
-            href="/dashboard" 
-            className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors group"
-          >
-            <svg className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Dashboard
-          </Link>
-          <div className="mt-2">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
-            <div className="truncate font-bold text-lg text-foreground tracking-tight">
-              {project?.name || (
-                <div className="h-6 w-24 bg-muted animate-pulse rounded mt-1" />
+    <Sidebar variant="floating" collapsible="icon" className="animate-in fade-in duration-300">
+      <SidebarHeader className="p-0 pt-2">
+        <SidebarMenu>
+          <SidebarMenuItem className="px-2">
+            <SidebarMenuButton asChild tooltip="Back to Dashboard" className="text-neutral-400 hover:text-white transition-colors mb-2">
+              <Link href="/dashboard">
+                <ArrowLeft className="size-4" />
+                <span>Back to Dashboard</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <div className="flex items-center h-14 w-full relative overflow-hidden border-t border-white/5 px-4 transition-all duration-200 group-data-[state=collapsed]:px-3">
+              <div 
+                className="flex items-center gap-3 flex-1 cursor-pointer"
+                onClick={() => {
+                  setOpen(state === "collapsed");
+                }}
+              >
+                <div className="flex aspect-square size-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white border border-white/20">
+                  <Box className="size-4" />
+                </div>
+                <div className="flex flex-col flex-1 whitespace-nowrap transition-opacity duration-200 group-data-[state=collapsed]:opacity-0">
+                  <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider leading-tight">Project</span>
+                  <span className="truncate font-bold text-base text-white tracking-tight leading-none">
+                    {project?.name || "..."}
+                  </span>
+                </div>
+              </div>
+              {state === "expanded" && (
+                <button 
+                  onClick={() => setOpen(false)}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-all cursor-pointer absolute right-3"
+                >
+                  <PanelLeftClose className="size-4" />
+                </button>
               )}
             </div>
-          </div>
-        </div>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-2 mb-1 px-3">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -66,10 +93,11 @@ export function ProjectSidebar() {
                   asChild 
                   tooltip="Features" 
                   isActive={pathname.includes("/features")}
+                  className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white"
                 >
                   <Link href={`/project/${projectId}/features`}>
-                    <ListTodo />
-                    <span>Features</span>
+                    <ListTodo className="size-4 text-neutral-400" />
+                    <span className="font-medium">Features</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -78,10 +106,11 @@ export function ProjectSidebar() {
                   asChild 
                   tooltip="Repositories"
                   isActive={pathname.includes("/repos")}
+                  className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white"
                 >
                   <Link href={`/project/${projectId}/repos`}>
-                    <Github />
-                    <span>Repositories</span>
+                    <Github className="size-4" />
+                    <span className="font-medium">Repositories</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -90,30 +119,11 @@ export function ProjectSidebar() {
                   asChild 
                   tooltip="Pull Requests"
                   isActive={pathname.includes("/pulls")}
+                  className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white"
                 >
                   <Link href={`/project/${projectId}/pulls`}>
-                    <GitPullRequest />
-                    <span>Pull Requests</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Configuration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  tooltip="Settings"
-                  isActive={pathname.includes("/settings")}
-                >
-                  <Link href={`/project/${projectId}/settings`}>
-                    <Settings />
-                    <span>Settings</span>
+                    <GitPullRequest className="size-4" />
+                    <span className="font-medium">Pull Requests</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -121,6 +131,10 @@ export function ProjectSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <NavUser />
+      </SidebarFooter>
     </Sidebar>
   );
 }
