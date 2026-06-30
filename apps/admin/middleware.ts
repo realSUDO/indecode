@@ -3,7 +3,7 @@ import { betterFetch } from "@better-fetch/fetch";
 import type { Session } from "better-auth/types";
 
 export default async function middleware(request: NextRequest) {
-  const { data: session } = await betterFetch<Session>(
+  const { data: session } = await betterFetch<any>(
     "/api/auth/get-session",
     {
       baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3003",
