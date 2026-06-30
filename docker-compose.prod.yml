@@ -9,6 +9,7 @@ services:
       - HOSTNAME=0.0.0.0
       - DATABASE_URL=${DATABASE_URL}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     expose:
       - "3000"
     networks:
@@ -29,6 +30,7 @@ services:
       - RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
       - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     expose:
       - "3000"
     networks:
@@ -53,6 +55,7 @@ services:
       - GITHUB_APP_ID=${GITHUB_APP_ID}
       - GITHUB_PRIVATE_KEY=${GITHUB_PRIVATE_KEY}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     expose:
       - "3000"
     networks:
@@ -78,6 +81,7 @@ services:
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
       - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     expose:
       - "3000"
     networks:
