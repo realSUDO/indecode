@@ -10,8 +10,8 @@ export function AppHeader() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border/40 bg-background/80 backdrop-blur-md px-4 transition-all duration-300">
+      <SidebarTrigger className="-ml-1 hover:bg-accent/50" />
       <div className="flex flex-1 items-center justify-between">
         <div className="flex items-center gap-2 px-3">
           {/* Breadcrumbs can go here in the future */}

@@ -4,6 +4,8 @@ import { db } from "@repo/database";
 import { featureRequests, users } from "@repo/database/schema";
 import { eq, desc } from "drizzle-orm";
 import { inngest } from "@repo/services/inngest";
+import { TRPCError } from "@trpc/server";
+import { hasProjectAccess } from "../../utils/auth";
 
 export const featureRequestRouter = router({
   create: protectedProcedure
@@ -13,30 +15,23 @@ export const featureRequestRouter = router({
       description: z.string().min(1),
       source: z.string().optional().default("manual"),
     }))
-    .mutation(async ({ input }) => {
-      try {
-        // Find a valid user to satisfy the foreign key, or create a dummy one
-        let user = await db.query.users.findFirst();
-        if (!user) {
-          [user] = await db.insert(users).values({
-            id: "system-user-id",
-            name: "System User",
-            email: "system@indecode.local",
-          }).returning();
-        }
-        
-        const createdById = user!.id;
+    .mutation(async ({ input, ctx }) => {
+      const hasAccess = await hasProjectAccess(input.projectId, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this project" });
+      }
 
+      try {
         const [newFeature] = await db.insert(featureRequests).values({
           projectId: input.projectId,
           title: input.title,
           description: input.description,
           source: input.source,
-          createdById,
+          createdById: ctx.user.id,
         }).returning();
+        
         if (!newFeature) throw new Error("Failed to create feature request");
 
-        // Trigger Inngest event to create discovery session
         await inngest.send({
           name: "feature/request.created",
           data: { featureRequestId: newFeature.id },
@@ -49,7 +44,7 @@ export const featureRequestRouter = router({
         };
       } catch (err: any) {
         console.error("Error creating feature request:", err);
-        throw new Error(`Failed to create feature request: ${err.message}`);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Failed to create feature request: ${err.message}` });
       }
     }),
 
@@ -58,7 +53,12 @@ export const featureRequestRouter = router({
       projectId: z.string(),
       status: z.string().optional(),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const hasAccess = await hasProjectAccess(input.projectId, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this project" });
+      }
+
       const conditions = [eq(featureRequests.projectId, input.projectId)];
       if (input.status) {
         conditions.push(eq(featureRequests.status, input.status));
@@ -69,7 +69,6 @@ export const featureRequestRouter = router({
         .where(conditions.length === 1 ? conditions[0] : undefined)
         .orderBy(desc(featureRequests.createdAt));
 
-      // Filter by projectId always, optionally by status
       const filtered = results.filter(r => {
         if (r.projectId !== input.projectId) return false;
         if (input.status && r.status !== input.status) return false;
@@ -88,13 +87,18 @@ export const featureRequestRouter = router({
 
   getById: protectedProcedure
     .input(z.object({ featureRequestId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const feature = await db.query.featureRequests.findFirst({
         where: eq(featureRequests.id, input.featureRequestId),
       });
 
       if (!feature) {
-        throw new Error("Feature request not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Feature request not found" });
+      }
+
+      const hasAccess = await hasProjectAccess(feature.projectId, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this feature request" });
       }
 
       return {
@@ -114,12 +118,25 @@ export const featureRequestRouter = router({
       featureRequestId: z.string(),
       status: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, input.featureRequestId),
+      });
+      if (!feature) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Feature request not found" });
+      }
+
+      const hasAccess = await hasProjectAccess(feature.projectId, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this feature request" });
+      }
+
       const [updated] = await db.update(featureRequests)
         .set({ status: input.status })
         .where(eq(featureRequests.id, input.featureRequestId))
         .returning();
-      if (!updated) throw new Error("Feature request not found");
+      
+      if (!updated) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Feature request not found during update" });
 
       return { id: updated.id, status: updated.status };
     }),
@@ -128,7 +145,37 @@ export const featureRequestRouter = router({
     .input(z.object({
       featureRequestId: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // 1. Verify User Plan for AI Execution
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, ctx.user.id)
+      });
+      if (!user || user.plan !== "pro") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Pro subscription required for AI implementation" });
+      }
+
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, input.featureRequestId),
+      });
+      if (!feature) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Feature request not found" });
+      }
+
+      const hasAccess = await hasProjectAccess(feature.projectId, ctx.user.id);
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "No access to this feature request" });
+      }
+
+      // 2. Prevent Concurrent AI Spam (Locking mechanism)
+      if (feature.status === "implementing") {
+        throw new TRPCError({ code: "CONFLICT", message: "Feature is already being implemented by AI" });
+      }
+
+      // Update status to prevent concurrent triggers
+      await db.update(featureRequests)
+        .set({ status: "implementing" })
+        .where(eq(featureRequests.id, feature.id));
+
       // Trigger Inngest event to start the autonomous AI implementation agent
       await inngest.send({
         name: "feature/implement",

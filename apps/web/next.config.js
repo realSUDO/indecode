@@ -5,11 +5,11 @@ const nextConfig = {
     return [
       {
         source: "/trpc/:path*",
-        destination: process.env.NODE_ENV === "production" ? "http://api:8080/trpc/:path*" : "http://127.0.0.1:8000/trpc/:path*",
+        destination: (process.env.API_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://127.0.0.1:8000")) + "/trpc/:path*",
       },
       {
         source: "/api/:path*",
-        destination: process.env.NODE_ENV === "production" ? "http://api:8080/api/:path*" : "http://127.0.0.1:8000/api/:path*",
+        destination: (process.env.API_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://127.0.0.1:8000")) + "/api/:path*",
       },
     ];
   },

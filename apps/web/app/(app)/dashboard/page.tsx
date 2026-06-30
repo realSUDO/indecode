@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { trpc } from "~/trpc/client";
 import { Loader2, Plus } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -83,19 +84,28 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Your Projects</h2>
+        <h2 className="text-xl font-semibold mb-4 text-white">Your Projects</h2>
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-950 p-6 shadow-sm">
+                <div className="space-y-2">
+                  <Skeleton className="w-1/2 h-6" />
+                  <Skeleton className="w-full h-4" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : projects && projects.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project: any) => (
-              <Link href={`/project/${project.id}/features`} key={project.id}>
-                <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
+              <Link href={`/project/${project.id}/features`} key={project.id} className="group outline-none">
+                <Card className="h-full bg-gray-950 border-gray-800 transition-all duration-300 group-hover:bg-gray-900 group-focus-visible:ring-2 group-focus-visible:ring-indigo-500">
                   <CardHeader>
-                    <CardTitle>{project.name}</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-white group-hover:text-indigo-400 transition-colors">
+                      {project.name}
+                    </CardTitle>
+                    <CardDescription className="line-clamp-2">
                       {project.description || "No description provided."}
                     </CardDescription>
                   </CardHeader>
@@ -104,9 +114,17 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 border rounded-lg border-dashed">
-            <p className="text-muted-foreground mb-4">You don't have any projects yet.</p>
-            <Button onClick={() => setIsDialogOpen(true)} variant="outline">
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl border border-dashed border-gray-800 bg-gray-950/50">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No projects yet</h3>
+            <p className="text-gray-400 max-w-sm mb-8">
+              Get started by creating your first project to organize your feature requests and engineering workflows.
+            </p>
+            <Button onClick={() => setIsDialogOpen(true)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] transition-all">
               Create your first project
             </Button>
           </div>

@@ -57,7 +57,7 @@ export const billingRouter = router({
       signature: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const isValid = input.signature === "dev_success" || verifyPaymentSignature(input.orderId, input.paymentId, input.signature);
+      const isValid = verifyPaymentSignature(input.orderId, input.paymentId, input.signature);
       if (!isValid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid signature" });
       }

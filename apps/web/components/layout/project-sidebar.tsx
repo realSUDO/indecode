@@ -33,11 +33,26 @@ export function ProjectSidebar() {
   });
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon" className="animate-in fade-in duration-300">
       <SidebarHeader>
-        <div className="flex flex-col gap-1 px-4 py-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
-          <span className="truncate font-bold text-lg">{project?.name || "Loading..."}</span>
+        <div className="flex flex-col gap-2 px-4 py-3">
+          <Link 
+            href="/dashboard" 
+            className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors group"
+          >
+            <svg className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Dashboard
+          </Link>
+          <div className="mt-2">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Project</span>
+            <div className="truncate font-bold text-lg text-foreground tracking-tight">
+              {project?.name || (
+                <div className="h-6 w-24 bg-muted animate-pulse rounded mt-1" />
+              )}
+            </div>
+          </div>
         </div>
       </SidebarHeader>
       

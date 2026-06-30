@@ -41,7 +41,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon" className="animate-in fade-in slide-in-from-left-4 duration-300">
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

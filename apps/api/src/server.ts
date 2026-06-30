@@ -23,6 +23,20 @@ if (env.NODE_ENV !== "prod" && env.NODE_ENV !== "production") {
       origin: "*",
     }),
   );
+} else {
+  // Production CORS rules
+  app.use(
+    cors({
+      origin: [
+        "https://in.indecode.in",
+        "https://www.indecode.in",
+        "https://indecode.in",
+        "https://payment.indecode.in",
+        "https://auth.indecode.in"
+      ],
+      credentials: true,
+    })
+  );
 }
 
 // Auth is now handled by the dedicated auth.indecode.in Next.js application
@@ -37,20 +51,15 @@ app.get("/health", (req, res) => {
   return res.json({ message: "Indecode server is healthy", healthy: true });
 });
 
-app.get("/debug-env", (req, res) => {
-  return res.json({
-    githubClientId: process.env.GITHUB_CLIENT_ID,
-    betterAuthUrl: process.env.BETTER_AUTH_URL,
+if (env.NODE_ENV !== "prod" && env.NODE_ENV !== "production") {
+  logger.debug(`openapi.json: ${env.BASE_URL}/openapi.json`);
+  app.get("/openapi.json", (req, res) => {
+    return res.json(openApiDocument);
   });
-});
 
-logger.debug(`openapi.json: ${env.BASE_URL}/openapi.json`);
-app.get("/openapi.json", (req, res) => {
-  return res.json(openApiDocument);
-});
-
-logger.debug(`docs: ${env.BASE_URL}/docs`);
-app.use("/docs", apiReference({ url: "/openapi.json" }));
+  logger.debug(`docs: ${env.BASE_URL}/docs`);
+  app.use("/docs", apiReference({ url: "/openapi.json" }));
+}
 
 app.use(
   "/api",

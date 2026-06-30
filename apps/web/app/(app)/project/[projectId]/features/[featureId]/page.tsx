@@ -3,6 +3,8 @@
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
 
+import { Skeleton } from "~/components/ui/skeleton";
+
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   submitted:   { bg: "bg-blue-500/10",    text: "text-blue-400",    dot: "bg-blue-400" },
   discovery:   { bg: "bg-purple-500/10",  text: "text-purple-400",  dot: "bg-purple-400" },
@@ -95,15 +97,35 @@ export default function FeatureDetailPage() {
   const projectId = params.projectId as string;
   const featureId = params.featureId as string;
 
-  const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery({ featureRequestId: featureId });
+  const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery(
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const status = query?.state?.data?.status || query?.status;
+        // Poll aggressively when an AI background process is running (e.g. generating PRD or planning tasks)
+        return (status === "prd_draft" || status === "planning") ? 2000 : false;
+      }
+    }
+  );
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center p-12">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-500 text-sm">Loading...</p>
+      <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
+        <Skeleton className="w-24 h-4" />
+        <div className="space-y-4">
+          <Skeleton className="w-3/4 h-8" />
+          <Skeleton className="w-full h-20" />
+          <Skeleton className="w-1/3 h-4" />
         </div>
+        <div>
+          <Skeleton className="w-24 h-4 mb-3" />
+          <div className="grid grid-cols-5 gap-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+        <Skeleton className="w-full h-24 rounded-2xl" />
       </div>
     );
   }
@@ -120,7 +142,7 @@ export default function FeatureDetailPage() {
   const nextAction = getNextAction(feature.status, projectId, featureId, router);
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
+    <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 animate-in fade-in duration-500">
       {/* Back */}
       <button
         onClick={() => router.push(`/project/${projectId}/features`)}
@@ -139,7 +161,16 @@ export default function FeatureDetailPage() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white">{feature.title}</h1>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyle?.bg} ${statusStyle?.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${statusStyle?.dot}`} />
+                {/* Add a ping animation for active AI states */}
+                {(feature.status === "prd_draft" || feature.status === "planning") && (
+                  <span className="relative flex h-2 w-2">
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusStyle?.dot}`}></span>
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${statusStyle?.dot}`}></span>
+                  </span>
+                )}
+                {feature.status !== "prd_draft" && feature.status !== "planning" && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusStyle?.dot}`} />
+                )}
                 {STATUS_LABELS[feature.status] ?? feature.status}
               </span>
             </div>
@@ -172,17 +203,22 @@ export default function FeatureDetailPage() {
               <button
                 key={tab.key}
                 onClick={() => router.push(`/project/${projectId}/features/${featureId}/${tab.key}`)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all text-center ${
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-300 text-center relative overflow-hidden group ${
                   isActive
-                    ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-400"
+                    ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                     : isDone
                     ? "border-emerald-700/40 bg-emerald-900/20 text-emerald-500 hover:border-emerald-600/50"
-                    : "border-gray-800 bg-gray-900/50 text-gray-600 hover:border-gray-700 hover:text-gray-500"
+                    : "border-gray-800 bg-gray-950 text-gray-600 hover:border-gray-700 hover:text-gray-400"
                 }`}
               >
-                {tab.icon}
-                <span className="text-xs font-medium">{tab.label}</span>
-                {isDone && <span className="text-xs text-emerald-600">✓</span>}
+                {isActive && (
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-transparent opacity-50 pointer-events-none" />
+                )}
+                <div className={`transform transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
+                  {tab.icon}
+                </div>
+                <span className="text-xs font-medium z-10">{tab.label}</span>
+                {isDone && <span className="absolute top-2 right-2 text-xs text-emerald-600">✓</span>}
               </button>
             );
           })}
@@ -191,23 +227,32 @@ export default function FeatureDetailPage() {
 
       {/* Next Action CTA */}
       {nextAction && (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex items-center justify-between">
+        <div className="bg-gray-950 border border-gray-800 rounded-2xl p-6 flex items-center justify-between shadow-xl shadow-black/50">
           <div>
-            <h3 className="text-white font-medium">Continue your workflow</h3>
+            <h3 className="text-white font-medium flex items-center gap-2">
+              Continue your workflow
+              {(feature.status === "prd_draft" || feature.status === "planning") && (
+                <div className="flex space-x-1">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
+                </div>
+              )}
+            </h3>
             <p className="text-gray-500 text-sm mt-1">
               {({
                 submitted: "Start chatting with the AI PM to gather requirements.",
                 discovery: "The AI PM is ready for your next message.",
-                prd_draft: "Your PRD is ready to review, edit, and approve.",
-                prd_approved: "Tasks are being generated on the Kanban board.",
-                planning: "AI is generating engineering tasks...",
-                in_progress: "Your Kanban board is ready.",
+                prd_draft: "AI is generating the PRD. You can review it once it completes, or view the draft now.",
+                prd_approved: "PRD approved! Tasks will now be generated on the Kanban board.",
+                planning: "AI is generating engineering tasks from your PRD...",
+                in_progress: "Your Kanban board is ready for development.",
               } as Record<string, string>)[feature.status as string] ?? "Continue your workflow."}
             </p>
           </div>
           <button
             onClick={nextAction.action}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium text-sm transition-colors whitespace-nowrap"
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:-translate-y-0.5 whitespace-nowrap flex items-center gap-2"
           >
             {nextAction.label}
           </button>
