@@ -34,6 +34,6 @@ sudo.indecode.in {
         admin $2a$14$xX.VvkWii70w8hNvpApueuJApiQif9fRZiPGQCJw7UGpiTa8HmAvS
     }
     handle {
-        reverse_proxy inngest:8288
+        reverse_proxy admin:3000
     }
 }

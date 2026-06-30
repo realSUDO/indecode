@@ -124,6 +124,26 @@ services:
       init-db:
         condition: service_completed_successfully
 
+  admin:
+    image: ghcr.io/realsudo/indecode-admin:latest
+    container_name: admin
+    restart: always
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - DATABASE_URL=${DATABASE_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    expose:
+      - "3000"
+    networks:
+      - default
+      - global_proxy_net
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+
   init-db:
     image: ghcr.io/realsudo/indecode-migrator:latest
     container_name: init-db

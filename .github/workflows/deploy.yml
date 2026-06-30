@@ -23,6 +23,7 @@ jobs:
       auth: ${{ steps.filter.outputs.auth }}
       api: ${{ steps.filter.outputs.api }}
       database: ${{ steps.filter.outputs.database }}
+      admin: ${{ steps.filter.outputs.admin }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,9 +40,9 @@ jobs:
         id: filter
         run: |
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
-            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth"]}')
+            APPS_JSON=$(npx turbo run build db:migrate --filter="...[HEAD^1]" --dry-run=json || echo '{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth", "@repo/admin"]}')
           else
-            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth"]}'
+            APPS_JSON='{"packages": ["@repo/marketing", "@repo/payment", "@repo/web", "@repo/api", "@repo/database", "@repo/auth", "@repo/admin"]}'
           fi
           
           echo "marketing=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/marketing"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
@@ -50,6 +51,7 @@ jobs:
           echo "auth=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/auth"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "api=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/api"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "database=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/database"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "admin=$(echo $APPS_JSON | jq -e '.packages | contains(["@repo/admin"])' >/dev/null && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
 
   build-marketing:
     needs: changes
@@ -234,8 +236,40 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
+  build-admin:
+    needs: changes
+    if: needs.changes.outputs.admin == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: |
+            APP_NAME=admin
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
   deploy:
-    needs: [build-marketing, build-payment, build-web, build-auth, build-api, build-migrator]
+    needs: [build-marketing, build-payment, build-web, build-auth, build-api, build-migrator, build-admin]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     steps:
