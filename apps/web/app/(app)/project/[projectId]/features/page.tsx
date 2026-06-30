@@ -5,7 +5,8 @@ import { trpc } from "~/trpc/client";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Loader2, Plus, Lightbulb } from "lucide-react";
+import { Loader2, Plus, Lightbulb, AlertCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 import { RepoSelector } from "~/components/project/repo-selector";
 
@@ -42,6 +43,10 @@ export default function FeaturesListPage() {
     projectId,
   });
 
+  const { data: connectedRepos } = trpc.github.listConnectedRepos.useQuery({ projectId });
+  const hasSyncedRepo = connectedRepos?.some((r: any) => r.chunkCount > 0);
+
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-12">
@@ -58,9 +63,27 @@ export default function FeaturesListPage() {
         </div>
         <div className="flex items-center gap-4">
           <RepoSelector projectId={projectId} />
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => router.push(`/project/${projectId}/features/new`)}>
-            New Feature
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    onClick={() => router.push(`/project/${projectId}/features/new`)}
+                    disabled={!hasSyncedRepo}
+                  >
+                    New Feature
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!hasSyncedRepo && (
+                <TooltipContent side="bottom" className="flex items-center gap-2 border-amber-500/30 bg-[#0A0A0A] text-amber-400">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Connect and sync a repository first
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

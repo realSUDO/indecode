@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Github, Loader2, Link as LinkIcon } from "lucide-react";
+import { Check, ChevronsUpDown, Github, Loader2, Link as LinkIcon, ExternalLink } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -38,6 +38,12 @@ export function RepoSelector({ projectId }: { projectId: string }) {
   const { data: allGithubRepos, isLoading: isLoadingGithub, error: githubError } = trpc.github.listRepos.useQuery(
     { projectId },
     { retry: false }
+  );
+
+  // Get the install URL to show when GitHub App isn't installed
+  const { data: installUrlData } = trpc.github.getInstallUrl.useQuery(
+    { projectId },
+    { enabled: !!githubError }
   );
 
   const connectRepo = trpc.github.connectRepo.useMutation({
@@ -79,6 +85,24 @@ export function RepoSelector({ projectId }: { projectId: string }) {
     connectRepo.mutate({ projectId, repoFullName });
   };
 
+  // If GitHub App not installed at all, show install button instead of the whole popover
+  if (githubError && !isLoadingGithub && (!connectedRepos || connectedRepos.length === 0)) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          className="border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 hover:text-amber-300 gap-2"
+          onClick={() => installUrlData?.url && window.open(installUrlData.url, "_blank")}
+          disabled={!installUrlData?.url}
+        >
+          <Github className="h-4 w-4" />
+          Install GitHub App
+          <ExternalLink className="h-3 w-3 opacity-70" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2">
       <Popover open={open} onOpenChange={setOpen}>
@@ -96,9 +120,7 @@ export function RepoSelector({ projectId }: { projectId: string }) {
                   ? "Loading repositories..."
                   : selectedRepo
                     ? selectedRepo.fullName
-                    : githubError
-                      ? "Install GitHub App first"
-                      : "Select a repository..."}
+                    : "Select a repository..."}
               </span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

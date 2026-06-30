@@ -83,12 +83,18 @@ export const githubRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Project not found or access denied" });
       }
 
+      // Primary lookup: find an installation belonging to the current user.
+      // This covers the common case where a user installs the GitHub App and
+      // we haven't yet stored a projectId link in organizationId.
+      // Fallback: also check if a previous flow stored the projectId in organizationId.
       const installation = await db.query.githubInstallations.findFirst({
-        where: eq(githubInstallations.organizationId, input.projectId) // Using organizationId column for projectId mapping for now
+        where: eq(githubInstallations.userId, ctx.user.id),
+      }) ?? await db.query.githubInstallations.findFirst({
+        where: eq(githubInstallations.organizationId, input.projectId),
       });
 
       if (!installation) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "GitHub App is not installed for this project." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "GitHub App is not installed. Please install the GitHub App first." });
       }
 
       const octokit = await getInstallationOctokit(installation.installationId);
@@ -121,10 +127,13 @@ export const githubRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Project not found or access denied" });
       }
 
+      // Same dual-lookup strategy as listRepos
       const installation = await db.query.githubInstallations.findFirst({
-        where: eq(githubInstallations.organizationId, input.projectId)
+        where: eq(githubInstallations.userId, ctx.user.id),
+      }) ?? await db.query.githubInstallations.findFirst({
+        where: eq(githubInstallations.organizationId, input.projectId),
       });
-      if (!installation) throw new TRPCError({ code: "NOT_FOUND", message: "No installation found" });
+      if (!installation) throw new TRPCError({ code: "NOT_FOUND", message: "GitHub App not installed. Please install it first." });
 
       const [newRepo] = await db.insert(repositories).values({
         projectId: input.projectId,
