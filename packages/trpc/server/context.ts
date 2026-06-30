@@ -6,8 +6,9 @@ export async function createContext(opts?: CreateExpressContextOptions) {
   let session = null;
 
   if (opts?.req) {
+    const { fromNodeHeaders } = require("better-auth/node");
     const authSession = await auth.api.getSession({
-      headers: opts.req.headers as any,
+      headers: fromNodeHeaders(opts.req.headers),
     });
     if (authSession) {
       user = authSession.user;
