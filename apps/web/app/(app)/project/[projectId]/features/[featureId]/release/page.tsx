@@ -36,21 +36,21 @@ export default function FeatureReleasePage() {
     const duration = 3000;
     const end = Date.now() + duration;
 
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#8b5cf6', '#3b82f6', '#10b981']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#8b5cf6', '#3b82f6', '#10b981']
-      });
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ffffff', '#a3a3a3', '#525252']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ffffff', '#a3a3a3', '#525252']
+        });
 
       if (Date.now() < end) {
         requestAnimationFrame(frame);
@@ -76,7 +76,7 @@ export default function FeatureReleasePage() {
   if (isFeatureLoading || isPrLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-12">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -98,28 +98,28 @@ export default function FeatureReleasePage() {
       </div>
 
       {isShipped ? (
-        <div className="bg-emerald-900/10 border border-emerald-900/30 rounded-3xl p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
-            <svg className="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-12 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+            <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h2 className="text-3xl font-bold text-white mb-3 relative z-10">Successfully Shipped!</h2>
-          <p className="text-emerald-500/80 text-lg max-w-md mx-auto relative z-10">
+          <p className="text-neutral-400 text-lg max-w-md mx-auto relative z-10">
             This feature has been marked as shipped and deployed to production. Great work!
           </p>
           <button
             onClick={() => router.push(`/project/${projectId}/features`)}
-            className="mt-8 px-6 py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-medium transition-colors border border-white/5 relative z-10"
+            className="mt-8 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors border border-white/10 relative z-10"
           >
             Back to Dashboard
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 animate-in fade-in duration-500">
           <div className="md:col-span-3 space-y-6">
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6">
               <h3 className="text-lg font-medium text-white mb-6">Readiness Checklist</h3>
               
               <div className="space-y-4">
@@ -143,25 +143,25 @@ export default function FeatureReleasePage() {
           </div>
 
           <div className="md:col-span-2">
-            <div className="bg-gradient-to-b from-indigo-500/10 to-gray-900 border border-indigo-500/20 rounded-2xl p-6 text-center h-full flex flex-col justify-center">
-              <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gradient-to-b from-white/[0.05] to-[#0A0A0A] border border-white/10 rounded-2xl p-6 text-center h-full flex flex-col justify-center">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+                <svg className="w-8 h-8 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Ready to Ship?</h3>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-neutral-400 text-sm mb-6">
                 {hasPr && !isPrMerged ? "This will automatically merge your Pull Request on GitHub and mark the feature as shipped." : "Once approved, this feature will be marked as shipped and close the delivery loop."}
               </p>
               
               {hasPr && !isPrMerged && (
                 <div className="mb-6 text-left">
-                  <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Commit Message</label>
+                  <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase tracking-wider">Commit Message</label>
                   <textarea
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
                     placeholder={`Merge feature: ${feature.title}`}
-                    className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none h-24"
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 resize-none h-24"
                   />
                 </div>
               )}
@@ -169,10 +169,10 @@ export default function FeatureReleasePage() {
               <button
                 onClick={handleShipIt}
                 disabled={isPending}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-auto"
+                className="w-full py-4 bg-white hover:bg-neutral-200 disabled:opacity-50 text-black rounded-xl font-bold text-lg transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-auto"
               >
                 {isPending ? (
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                 ) : (
                   <>
                     <span>{hasPr && !isPrMerged ? "Merge & Ship It" : "Ship It"}</span>
@@ -192,21 +192,21 @@ export default function FeatureReleasePage() {
 
 function ChecklistItem({ title, description, isDone }: { title: string, description: string, isDone: boolean }) {
   return (
-    <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-800 bg-gray-900/50">
-      <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-        isDone ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]" : "bg-gray-800 text-gray-500"
+    <div className="flex items-start gap-4 p-4 rounded-xl border border-white/10 bg-[#050505]">
+      <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 border ${
+        isDone ? "bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "bg-transparent border-white/20 text-neutral-600"
       }`}>
         {isDone ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
           </svg>
         ) : (
-          <span className="text-xs font-bold">?</span>
+          <span className="text-xs font-bold font-mono">?</span>
         )}
       </div>
       <div>
-        <h4 className={`text-base font-medium ${isDone ? "text-white" : "text-gray-400"}`}>{title}</h4>
-        <p className="text-sm text-gray-500 mt-1">{description}</p>
+        <h4 className={`text-base font-medium ${isDone ? "text-white" : "text-neutral-400"}`}>{title}</h4>
+        <p className="text-sm text-neutral-500 mt-1">{description}</p>
       </div>
     </div>
   );

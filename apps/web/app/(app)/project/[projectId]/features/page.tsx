@@ -17,7 +17,7 @@ const statusColors: Record<string, string> = {
   planning: "bg-white/5 text-neutral-300 border-white/10",
   in_progress: "bg-white/5 text-neutral-300 border-white/10",
   review: "bg-white/5 text-neutral-300 border-white/10",
-  shipped: "bg-white/5 text-neutral-300 border-white/10",
+  shipped: "bg-white text-black font-semibold",
 };
 
 
@@ -58,8 +58,7 @@ export default function FeaturesListPage() {
         </div>
         <div className="flex items-center gap-4">
           <RepoSelector projectId={projectId} />
-          <Button onClick={() => router.push(`/project/${projectId}/features/new`)}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => router.push(`/project/${projectId}/features/new`)}>
             New Feature
           </Button>
         </div>
@@ -73,9 +72,8 @@ export default function FeaturesListPage() {
             <p className="text-muted-foreground mt-2 text-center max-w-md">
               Create your first feature request to kick off the AI-powered discovery process.
             </p>
-            <Button className="mt-6" onClick={() => router.push(`/project/${projectId}/features/new`)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Feature Request
+            <Button className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => router.push(`/project/${projectId}/features/new`)}>
+              New Feature
             </Button>
           </CardContent>
         </Card>

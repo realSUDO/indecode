@@ -158,9 +158,6 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
-        <NavUser />
-      </SidebarFooter>
     </Sidebar>
   );
 }

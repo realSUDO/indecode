@@ -154,6 +154,33 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
       return { success: false, message: "No code changes generated." };
     }
 
+    // 3.5. Simulate Sequential Task Completion (Option B)
+    // Production grade agents display live progress. We simulate it here by 
+    // updating task statuses one-by-one with a short delay after generation is complete.
+    if (data.featureTasks.length > 0) {
+      // First, set all to 'todo'
+      await step.run("initialize-tasks", async () => {
+        await db.update(tasks)
+          .set({ status: "todo" })
+          .where(eq(tasks.featureRequestId, featureRequestId));
+      });
+
+      for (const task of data.featureTasks) {
+        // Set task to in_progress
+        await step.run(`task-${task.id}-start`, async () => {
+          await db.update(tasks).set({ status: "in_progress" }).where(eq(tasks.id, task.id));
+        });
+
+        // Wait to simulate work
+        await step.sleep(`sleep-task-${task.id}`, "3s");
+
+        // Set task to done
+        await step.run(`task-${task.id}-done`, async () => {
+          await db.update(tasks).set({ status: "done" }).where(eq(tasks.id, task.id));
+        });
+      }
+    }
+
     // 4. Create Commit & PR
     await step.run("create-pr", async () => {
       const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
@@ -195,6 +222,13 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
           if (err.status !== 422) throw err;
         }
       }
+    });
+
+    // 5. Update Status to Review (Fixes the stuck at implementation bug)
+    await step.run("update-feature-status", async () => {
+      await db.update(featureRequests)
+        .set({ status: "review" })
+        .where(eq(featureRequests.id, featureRequestId));
     });
 
     return { success: true, filesModified: fileChanges.length };

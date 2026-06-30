@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
 
 import { Skeleton } from "~/components/ui/skeleton";
+import { ExecutionTimeline } from "~/components/project/execution-timeline";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   submitted:   { bg: "bg-white/5",    text: "text-neutral-300",    dot: "bg-neutral-400" },
@@ -23,58 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
   review: "Review", shipped: "Shipped",
 };
 
-const PIPELINE_TABS = [
-  {
-    key: "discovery",
-    label: "Discovery",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
-    activeFor: ["submitted", "discovery"],
-  },
-  {
-    key: "prd",
-    label: "PRD",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    activeFor: ["prd_draft", "prd_approved"],
-  },
-  {
-    key: "tasks",
-    label: "Tasks",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-      </svg>
-    ),
-    activeFor: ["planning", "in_progress", "review"],
-  },
-  {
-    key: "reviews",
-    label: "Reviews",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-      </svg>
-    ),
-    activeFor: ["review"],
-  },
-  {
-    key: "release",
-    label: "Release",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3l14 9-14 9V3z" />
-      </svg>
-    ),
-    activeFor: ["shipped"],
-  },
-];
+// Old PIPELINE_TABS removed in favor of ExecutionTimeline
 
 function getNextAction(status: string, projectId: string, featureId: string, router: ReturnType<typeof useRouter>) {
   if (status === "submitted" || status === "discovery") {
@@ -188,42 +138,11 @@ export default function FeatureDetailPage() {
       </div>
 
       {/* Pipeline Navigation */}
-      <div>
-        <p className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-3">Pipeline</p>
-        <div className="grid grid-cols-5 gap-2">
-          {PIPELINE_TABS.map((tab, i) => {
-            const isActive = tab.activeFor.includes(feature.status);
-            const isDone = PIPELINE_TABS.slice(0, i).some(prev =>
-              prev.activeFor.some(s => {
-                const statusOrder = ["submitted", "discovery", "prd_draft", "prd_approved", "planning", "in_progress", "review", "shipped"];
-                const featureIdx = statusOrder.indexOf(feature.status);
-                const tabIdx = Math.max(...prev.activeFor.map(x => statusOrder.indexOf(x)));
-                return featureIdx > tabIdx;
-              })
-            );
-
-            return (
-              <button
-                key={tab.key}
-                onClick={() => router.push(`/project/${projectId}/features/${featureId}/${tab.key}`)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-300 text-center relative overflow-hidden group ${
-                  isActive
-                    ? "border-white/20 bg-white/5 text-white"
-                    : isDone
-                    ? "border-white/10 bg-white/[0.02] text-neutral-400 hover:border-white/15"
-                    : "border-transparent bg-transparent text-neutral-600 hover:text-neutral-400"
-                }`}
-              >
-                <div className={`transform transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
-                  {tab.icon}
-                </div>
-                <span className="text-xs font-medium z-10">{tab.label}</span>
-                {isDone && <span className="absolute top-2 right-2 text-xs text-neutral-500">✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <ExecutionTimeline 
+        currentStatus={feature.status} 
+        projectId={projectId} 
+        featureId={featureId} 
+      />
 
       {/* Next Action CTA */}
       {nextAction && (

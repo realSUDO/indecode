@@ -60,14 +60,31 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full ${
+                (user as any).plan === "pro" ? "bg-indigo-500/20 text-indigo-400" :
+                (user as any).plan === "enterprise" ? "bg-amber-500/20 text-amber-400" :
+                "bg-white/10 text-neutral-400"
+              }`}>
+                {(user as any).plan || "free"}
+              </span>
+            </div>
+            <p className="text-xs leading-none text-muted-foreground mt-1">
               {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {((user as any).plan === "free" || !(user as any).plan) && (
+            <DropdownMenuItem asChild>
+              <Link href="/billing" className="w-full cursor-pointer text-indigo-400 focus:text-indigo-400 focus:bg-indigo-500/10">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Upgrade to Pro</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link href="/settings/profile" className="w-full cursor-pointer">
               <User className="mr-2 h-4 w-4" />
