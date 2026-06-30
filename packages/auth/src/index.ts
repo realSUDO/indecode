@@ -25,6 +25,19 @@ const baseConfig = {
         type: "string",
         required: false,
         defaultValue: "free"
+      },
+      onboardingCompleted: {
+        type: "boolean",
+        required: false,
+        defaultValue: false
+      },
+      company: {
+        type: "string",
+        required: false
+      },
+      onboardingRole: {
+        type: "string",
+        required: false
       }
     }
   },

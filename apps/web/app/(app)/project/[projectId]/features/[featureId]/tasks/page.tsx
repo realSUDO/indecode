@@ -98,13 +98,13 @@ export default function TasksPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={\`relative overflow-hidden rounded-xl border transition-all duration-500 \${
+                  className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${
                     isInProgress 
                       ? "border-white/20 bg-white/5 shadow-2xl" 
                       : isDone
                       ? "border-white/5 bg-transparent opacity-60"
                       : "border-white/5 bg-[#0A0A0A]"
-                  }\`}
+                  }`}
                 >
                   {/* Subtle pulsing background for active task */}
                   {isInProgress && (
@@ -123,9 +123,9 @@ export default function TasksPage() {
                     </div>
 
                     <div className="flex-1">
-                      <h3 className={\`font-medium text-base transition-colors duration-300 \${
+                      <h3 className={`font-medium text-base transition-colors duration-300 ${
                         isDone ? "text-neutral-400 line-through decoration-neutral-600" : "text-white"
-                      }\`}>
+                      }`}>
                         {task.title}
                       </h3>
                       {task.description && (

@@ -71,7 +71,7 @@ export function ExecutionTimeline({
         <motion.div 
           className="absolute left-[5%] top-1/2 -translate-y-1/2 h-[2px] bg-neutral-300 z-0"
           initial={{ width: "0%" }}
-          animate={{ width: \`\${(activeStageIndex / (visibleStages.length - 1)) * 90}%\` }}
+          animate={{ width: `${(activeStageIndex / (visibleStages.length - 1)) * 90}%` }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
         />
 
@@ -89,7 +89,7 @@ export function ExecutionTimeline({
               className="relative z-10 flex flex-col items-center gap-3 cursor-pointer group"
               onClick={() => {
                 if (!isFuture || isActive) {
-                  router.push(\`/project/\${projectId}/features/\${featureId}/\${stage.key}\`);
+                  router.push(`/project/${projectId}/features/${featureId}/${stage.key}`);
                 }
               }}
             >
@@ -105,21 +105,21 @@ export function ExecutionTimeline({
                 )}
                 
                 <motion.div 
-                  className={\`w-5 h-5 rounded-full transition-colors duration-500 \${
+                  className={`w-5 h-5 rounded-full transition-colors duration-500 ${
                     isCompleted || isActive 
                       ? "bg-[#d4d4d4] shadow-[0_0_10px_rgba(255,255,255,0.3)]" 
                       : "bg-[#171717] border-2 border-[#333333]"
-                  }\`}
+                  }`}
                   whileHover={{ scale: isFuture && !isActive ? 1 : 1.2 }}
                 />
               </div>
 
               {/* Label */}
-              <span className={\`text-sm font-medium font-mono transition-colors duration-500 \${
+              <span className={`text-sm font-medium font-mono transition-colors duration-500 ${
                 isActive ? "text-white" :
                 isCompleted ? "text-[#a3a3a3]" :
                 "text-[#525252]"
-              }\`}>
+              }`}>
                 {stage.label}
               </span>
             </motion.div>

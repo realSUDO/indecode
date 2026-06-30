@@ -8,79 +8,58 @@ import { PipelineAnimation } from "./pipeline";
 
 // ─── Interactive Early Access Button ────────────────────────────────────────
 
-function EarlyAccessButton() {
+function FeatureRequestCTA() {
   const [isOpen, setIsOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const [feature, setFeature] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!feature) return;
     
-    // Optimistic UI update
+    // Save to cookie for 1 hour
+    document.cookie = `indecode-cached-feature=${encodeURIComponent(feature)}; domain=${process.env.NODE_ENV === "production" ? ".indecode.in" : "localhost"}; path=/; max-age=3600`;
+    
     setStatus("success");
     
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        setTimeout(() => {
-          setStatus("idle");
-          setIsOpen(false);
-          setEmail("");
-        }, 2000);
-      } else {
-        setStatus("error");
-        setTimeout(() => setStatus("idle"), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 3000);
-    }
+    setTimeout(() => {
+      const isDev = process.env.NODE_ENV !== "production";
+      const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+      window.location.href = signInUrl;
+    }, 800);
   };
 
   return (
     <motion.div 
       initial={false}
-      animate={{ width: isOpen ? 340 : 160 }}
+      animate={{ width: isOpen ? 420 : 160 }}
       transition={{ type: "spring", bounce: 0, duration: 0.4 }}
       className="relative p-[1.5px] rounded-full overflow-hidden shadow-[0_0_25px_rgba(255,255,255,0.05)] group"
     >
-      {/* Static border when closed */}
       <div className={`absolute inset-0 transition-opacity duration-300 ${isOpen ? "opacity-0" : "opacity-100 bg-white/[0.1]"}`} />
-
-      {/* Moving Rainbow Border Layer */}
       <div 
         className={`absolute left-1/2 top-1/2 w-[600px] h-[600px] bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)] transition-opacity duration-500 ${isOpen ? "opacity-100" : "opacity-0"}`} 
-        style={{
-          animation: "spin-smooth 4s linear infinite"
-        }}
+        style={{ animation: "spin-smooth 4s linear infinite" }}
       />
-      
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin-smooth {
           0% { transform: translate(-50%, -50%) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
       `}} />
-      
       <form 
         onSubmit={handleSubmit}
         className="relative w-full flex items-center h-[52px] bg-neutral-950 rounded-full overflow-hidden"
       >
         <input 
           ref={inputRef}
-          type="email" 
-          placeholder="Enter your email..." 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text" 
+          placeholder="I want a feature that..." 
+          value={feature}
+          onChange={(e) => setFeature(e.target.value)}
           required
-          className="absolute left-0 w-[220px] h-full bg-transparent pl-5 pr-2 text-sm text-white placeholder:text-neutral-500 outline-none"
+          className="absolute left-0 w-[300px] h-full bg-transparent pl-5 pr-2 text-sm text-white placeholder:text-neutral-500 outline-none"
           style={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? 'auto' : 'none', transition: 'opacity 0.3s ease 0.1s' }}
         />
         <motion.button
@@ -98,7 +77,7 @@ function EarlyAccessButton() {
           className="absolute right-0 top-0 bottom-0 flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-neutral-200 transition-colors z-10 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.2)]"
         >
           <span className="flex items-center gap-2">
-            {status === "success" ? "Added" : status === "error" ? "Failed" : status === "submitting" ? "..." : isOpen ? "Join" : "Early access"}
+            {status === "success" ? "Added" : status === "error" ? "Failed" : status === "submitting" ? "..." : isOpen ? "Add" : "Add Feature"}
             {status === "idle" && !isOpen && <ArrowRight size={16} />}
           </span>
         </motion.button>
@@ -316,12 +295,15 @@ function Navbar() {
           <a href="#developers" className="hover:text-white transition-colors">Developers</a>
         </div>
 
-        <div className="flex items-center gap-2">
           <button 
-            onClick={() => setClickCount(prev => prev + 1)}
-            className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-105 ${currentBtnColor}`}
+            onClick={() => {
+              const isDev = process.env.NODE_ENV !== "production";
+              const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+              window.location.href = signInUrl;
+            }}
+            className="px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-105 bg-white text-black hover:bg-neutral-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
           >
-            Coming Soon
+            Get Started
           </button>
         </div>
       </motion.header>
@@ -384,7 +366,7 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.9 }}
             className="mt-10 flex flex-col md:flex-row items-center gap-5"
           >
-            <EarlyAccessButton />
+            <FeatureRequestCTA />
           </motion.div>
         </div>
       </motion.div>
@@ -718,7 +700,7 @@ function CTASection() {
           Start building faster.
         </h2>
         <div className="flex justify-center">
-          <EarlyAccessButton />
+          <FeatureRequestCTA />
         </div>
       </motion.div>
     </section>
@@ -729,8 +711,31 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="py-10 text-center">
-      {/* Empty footer for spacing */}
+    <footer className="py-12 border-t border-white/[0.05] bg-black">
+      <div className="max-w-7xl mx-auto px-6 sm:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 bg-white rounded-md flex items-center justify-center">
+            <svg viewBox="0 0 128 128" className="w-3 h-3 text-black">
+              <path d="M34 38 L14 64 L34 90" stroke="currentColor" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="64" y1="36" x2="64" y2="92" stroke="currentColor" strokeWidth="12" strokeLinecap="round" />
+              <path d="M94 38 L114 64 L94 90" stroke="currentColor" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span className="text-sm text-neutral-500 font-medium">© 2026 Indecode</span>
+        </div>
+        
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-neutral-400 font-medium">
+          <a href="https://github.com/realSUDO/indecode" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
+          <a href="https://x.com/sudo_core" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">X</a>
+          <a href="https://linkedin.com/in/realsudo" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
+          <a href="mailto:sumitomvishwkarma@gmail.com" className="hover:text-white transition-colors">Email</a>
+        </div>
+        
+        <div className="flex items-center gap-6 text-sm text-neutral-500">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+        </div>
+      </div>
     </footer>
   );
 }

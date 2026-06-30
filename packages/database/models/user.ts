@@ -8,6 +8,9 @@ export const users = pgTable("users", {
   image: text("image"),
   role: varchar("role", { length: 20 }).notNull().default("user"), // 'user' or 'admin'
   plan: varchar("plan", { length: 20 }).notNull().default("free"),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  company: varchar("company", { length: 255 }),
+  onboardingRole: varchar("onboarding_role", { length: 100 }),
   totalExecutions: integer("total_executions").notNull().default(0),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),

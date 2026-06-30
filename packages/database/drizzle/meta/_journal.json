@@ -50,6 +50,13 @@
       "when": 1782821070560,
       "tag": "0006_crazy_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782841738451,
+      "tag": "0007_eminent_spectrum",
+      "breakpoints": true
     }
   ]
 }
