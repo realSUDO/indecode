@@ -4,6 +4,8 @@ import { discoverySessions, discoveryMessages, featureRequests, prds } from "@re
 import { eq, asc } from "drizzle-orm";
 import { generatePRD } from "../../ai/agents/prd";
 
+const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
+
 /**
  * Triggered when discovery is completed.
  * Gathers the full conversation transcript and generates a PRD.
@@ -75,6 +77,13 @@ export const generatePRDFunction = inngest.createFunction(
       await db.update(featureRequests)
         .set({ status: "prd_draft" })
         .where(eq(featureRequests.id, featureRequestId));
+        
+      try {
+        await fetch(`${API_BASE_URL}/api/internal/emit`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "prd_draft" } })
+        });
+      } catch (e) {}
     });
 
     return { prdId: savedPRD.id };

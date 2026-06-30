@@ -7,6 +7,8 @@ import { getPlanningModel } from "../../ai/index";
 import { generateText } from "ai";
 import { getInstallationOctokit } from "../../github/index";
 
+const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
+
 export const implementFeatureFunction = inngest.createFunction(
   { 
     id: "implement-feature", 
@@ -102,27 +104,52 @@ export const implementFeatureFunction = inngest.createFunction(
       return results;
     });
 
-    // 3. Generate File Changes using Senior AI Prompt
-    const fileChanges = await step.run("generate-code", async () => {
-      const contextStr = contextFiles.map((f: any) => `FILE: ${f.filePath}\n${f.content}`).join("\n\n");
-      
-      let reviewIssuesStr = "";
-      if (data.pr?.reviews?.length && data.pr.reviews[0].issues.length > 0) {
-        reviewIssuesStr = `\n\nRecent Review Issues to Fix:\n` + 
-          data.pr.reviews[0].issues.map((i: any) => `- ${i.title}: ${i.description} (File: ${i.filePath || 'N/A'})`).join("\n");
-      }
+    // 3. Iteratively Generate File Changes per Task
+    if (data.featureTasks.length > 0) {
+      await step.run("initialize-tasks", async () => {
+        await db.update(tasks).set({ status: "todo" }).where(eq(tasks.featureRequestId, featureRequestId));
+      });
 
-      const prompt = `You are acting as the Lead Engineer, Staff Software Architect (Amazon L6+/L7), and Technical Lead responsible for implementing features on an active Pull Request.
+      for (const task of data.featureTasks) {
+        // Set task to in_progress and notify UI
+        await step.run(`task-${task.id}-start`, async () => {
+          await db.update(tasks).set({ status: "in_progress" }).where(eq(tasks.id, task.id));
+          try {
+            await fetch(`${API_BASE_URL}/api/internal/emit`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ event: "taskUpdated", featureId: featureRequestId, data: { id: task.id, status: "in_progress" } })
+            });
+          } catch (e) {}
+        });
 
-Your responsibility is to continue development on the existing feature branch, preserving its history and intent until it is ready to merge.
+        // Generate changes for THIS SPECIFIC TASK
+        const fileChanges = await step.run(`task-${task.id}-generate`, async () => {
+          const contextStr = contextFiles.map((f: any) => `FILE: ${f.filePath}\n${f.content}`).join("\n\n");
+          
+          let reviewIssuesStr = "";
+          if (data.pr?.reviews?.length && data.pr.reviews[0].issues.length > 0) {
+            reviewIssuesStr = `\n\nRecent Review Issues to Fix:\n` + 
+              data.pr.reviews[0].issues.map((i: any) => `- ${i.title}: ${i.description} (File: ${i.filePath || 'N/A'})`).join("\n");
+          }
 
-Never restart implementation.
-Never abandon the current branch.
-Every implementation should be an incremental improvement toward a merge-ready Pull Request.
+          const prompt = `You are acting as the Lead Engineer, Staff Software Architect (Amazon L6+/L7), and Technical Lead responsible for implementing features on an active Pull Request.
+
+Your responsibility is to write production-ready, complete code for a SINGLE task.
+CRITICAL RULES:
+1. Never restart implementation. Always build on the existing branch context.
+2. Never abandon the current branch.
+3. Every implementation should be an incremental improvement toward a merge-ready Pull Request.
+4. Do NOT leave things halfway. Do NOT use placeholders like "TODO" or "insert code here".
+5. Write the full, working implementation for the requested task.
+6. Fix any bugs in the codebase related to the feature.
 
 Feature: ${data.feature.title}
 PRD: ${data.prd?.content || "N/A"}
-Tasks: ${JSON.stringify(data.featureTasks.map((t: any) => t.title))}
+
+Current Task to implement:
+- [${task.priority}] ${task.title}
+  Description: ${task.description || "N/A"}
+
 ${reviewIssuesStr}
 
 Relevant existing code (Current Branch State):
@@ -133,104 +160,92 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
   { "path": "path/to/file", "content": "entire new file content" }
 ]`;
 
-      const result = await generateText({
-        model: getPlanningModel(),
-        prompt,
-      });
-
-      try {
-        let jsonStr = result.text.trim();
-        const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
-        if (jsonMatch) jsonStr = jsonMatch[0];
-        else jsonStr = jsonStr.replace(/```json|```/g, "").trim();
-        return JSON.parse(jsonStr) as { path: string, content: string }[];
-      } catch (e) {
-        console.error("Failed to parse file changes JSON:", result.text);
-        return [];
-      }
-    });
-
-    if (fileChanges.length === 0) {
-      return { success: false, message: "No code changes generated." };
-    }
-
-    // 3.5. Simulate Sequential Task Completion (Option B)
-    // Production grade agents display live progress. We simulate it here by 
-    // updating task statuses one-by-one with a short delay after generation is complete.
-    if (data.featureTasks.length > 0) {
-      // First, set all to 'todo'
-      await step.run("initialize-tasks", async () => {
-        await db.update(tasks)
-          .set({ status: "todo" })
-          .where(eq(tasks.featureRequestId, featureRequestId));
-      });
-
-      for (const task of data.featureTasks) {
-        // Set task to in_progress
-        await step.run(`task-${task.id}-start`, async () => {
-          await db.update(tasks).set({ status: "in_progress" }).where(eq(tasks.id, task.id));
+          const result = await generateText({ model: getPlanningModel(), prompt });
+          try {
+            let jsonStr = result.text.trim();
+            const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+            else jsonStr = jsonStr.replace(/```json|```/g, "").trim();
+            return JSON.parse(jsonStr) as { path: string, content: string }[];
+          } catch (e) {
+            console.error("Failed to parse file changes JSON:", result.text);
+            return [];
+          }
         });
 
-        // Wait to simulate work
-        await step.sleep(`sleep-task-${task.id}`, "3s");
+        // Apply changes to GitHub and local context
+        if (fileChanges.length > 0) {
+          await step.run(`task-${task.id}-commit`, async () => {
+            const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+            
+            // Check branch again inside the loop to get latest sha
+            let currentSha = branchState.sha;
+            try {
+              const { data: refData } = await octokit.rest.git.getRef({ owner, repo: name, ref: `heads/${branchName}` });
+              currentSha = refData.object.sha;
+              branchState.exists = true;
+            } catch (err: any) {
+              if (err.status === 404 && !branchState.exists) {
+                 await octokit.rest.git.createRef({ owner, repo: name, ref: `refs/heads/${branchName}`, sha: branchState.sha });
+              }
+            }
 
-        // Set task to done
+            const tree = await Promise.all(fileChanges.map(async (change: any) => {
+              const { data: blob } = await octokit.rest.git.createBlob({ owner, repo: name, content: change.content, encoding: "utf-8" });
+              return { path: change.path, mode: "100644" as const, type: "blob" as const, sha: blob.sha };
+            }));
+
+            const { data: newTree } = await octokit.rest.git.createTree({ owner, repo: name, base_tree: currentSha, tree });
+            const commitMessage = `feat: ${task.title}`;
+            const { data: newCommit } = await octokit.rest.git.createCommit({ owner, repo: name, message: commitMessage, tree: newTree.sha, parents: [currentSha] });
+
+            await octokit.rest.git.updateRef({ owner, repo: name, ref: `heads/${branchName}`, sha: newCommit.sha, force: false });
+
+            if (!branchState.exists) {
+              try {
+                await octokit.rest.pulls.create({
+                  owner, repo: name, title: `Implement: ${data.feature.title}`, head: branchName, base: repo.defaultBranch || "main",
+                  body: `Automated PR by Indecode AI implementation agent.\n\nPRD attached for feature: ${data.feature.title}`,
+                });
+              } catch (err: any) { if (err.status !== 422) throw err; }
+            }
+
+            // Update local context string for next task
+            for (const change of fileChanges) {
+              const existingFile = contextFiles.find((f: any) => f.filePath === change.path);
+              if (existingFile) {
+                existingFile.content = change.content;
+              } else {
+                contextFiles.push({ filePath: change.path, content: change.content });
+              }
+            }
+          });
+        }
+
+        // Set task to done and notify UI
         await step.run(`task-${task.id}-done`, async () => {
           await db.update(tasks).set({ status: "done" }).where(eq(tasks.id, task.id));
+          try {
+            await fetch(`${API_BASE_URL}/api/internal/emit`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ event: "taskUpdated", featureId: featureRequestId, data: { id: task.id, status: "done" } })
+            });
+          } catch (e) {}
         });
       }
     }
 
-    // 4. Create Commit & PR
-    await step.run("create-pr", async () => {
-      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
-      
-      if (!branchState.exists) {
-        await octokit.rest.git.createRef({
-          owner, repo: name, ref: `refs/heads/${branchName}`, sha: branchState.sha,
-        });
-      }
-
-      const tree = await Promise.all(fileChanges.map(async (change: any) => {
-        const { data: blob } = await octokit.rest.git.createBlob({
-          owner, repo: name, content: change.content, encoding: "utf-8",
-        });
-        return { path: change.path, mode: "100644" as const, type: "blob" as const, sha: blob.sha };
-      }));
-
-      const { data: newTree } = await octokit.rest.git.createTree({
-        owner, repo: name, base_tree: branchState.sha, tree,
-      });
-
-      const commitMessage = data.pr?.reviews?.length ? `fix: Address review issues for ${data.feature.title}` : `feat: Implement ${data.feature.title}`;
-
-      const { data: newCommit } = await octokit.rest.git.createCommit({
-        owner, repo: name, message: commitMessage, tree: newTree.sha, parents: [branchState.sha],
-      });
-
-      await octokit.rest.git.updateRef({
-        owner, repo: name, ref: `heads/${branchName}`, sha: newCommit.sha, force: false, // Iterative fast-forward
-      });
-
-      if (!branchState.exists) {
-        try {
-          await octokit.rest.pulls.create({
-            owner, repo: name, title: `Implement: ${data.feature.title}`, head: branchName, base: repo.defaultBranch || "main",
-            body: `Automated PR by Indecode AI implementation agent.\n\nPRD attached for feature: ${data.feature.title}`,
-          });
-        } catch (err: any) {
-          if (err.status !== 422) throw err;
-        }
-      }
-    });
-
-    // 5. Update Status to Review (Fixes the stuck at implementation bug)
+    // 5. Update Status to Review
     await step.run("update-feature-status", async () => {
-      await db.update(featureRequests)
-        .set({ status: "review" })
-        .where(eq(featureRequests.id, featureRequestId));
+      await db.update(featureRequests).set({ status: "review" }).where(eq(featureRequests.id, featureRequestId));
+      try {
+        await fetch(`${API_BASE_URL}/api/internal/emit`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "review" } })
+        });
+      } catch (e) {}
     });
 
-    return { success: true, filesModified: fileChanges.length };
+    return { success: true };
   }
 );

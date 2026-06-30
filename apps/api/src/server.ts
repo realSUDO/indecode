@@ -119,6 +119,25 @@ app.post("/api/webhooks/razorpay", express.raw({ type: "application/json" }), as
 
 app.use(express.json());
 
+import { getIO } from "./socket";
+
+// Internal endpoint to emit socket events from Next.js / Inngest
+app.post("/api/internal/emit", (req, res) => {
+  // In production, you'd protect this with a shared internal secret
+  const { event, featureId, data } = req.body;
+  if (!event || !featureId) {
+    return res.status(400).json({ error: "Missing event or featureId" });
+  }
+  
+  try {
+    const io = getIO();
+    io.to(featureId).emit(event, data);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: "Socket.io not initialized" });
+  }
+});
+
 app.get("/", (req, res) => {
   return res.json({ message: "Indecode is up and running..." });
 });

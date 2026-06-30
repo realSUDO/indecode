@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
+import { useFeatureSocket } from "~/hooks/use-feature-socket";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Circle, PlayCircle, Loader2 } from "lucide-react";
 
@@ -22,17 +23,17 @@ export default function TasksPage() {
   const projectId = params.projectId as string;
   const utils = trpc.useUtils();
 
-  const { data: feature } = trpc.featureRequest.getById.useQuery({ featureRequestId: featureId });
+  useFeatureSocket(featureId);
+
+  const { data: feature } = trpc.featureRequest.getById.useQuery(
+    { featureRequestId: featureId }
+  );
   
-  // Intelligent polling: poll fast (2s) if implementing or planning, otherwise longer or disabled
   const isGenerating = feature?.status === "planning";
   const isImplementing = feature?.status === "implementing";
-  const shouldPoll = isGenerating || isImplementing;
 
   const { data: taskList, isLoading } = trpc.task.listByFeature.useQuery(
-    { featureRequestId: featureId },
-    // Always poll while implementing or planning; slow poll otherwise
-    { refetchInterval: (shouldPoll || isImplementing) ? 2000 : 10000 }
+    { featureRequestId: featureId }
   );
 
   const implementMutation = trpc.featureRequest.triggerImplementation.useMutation({

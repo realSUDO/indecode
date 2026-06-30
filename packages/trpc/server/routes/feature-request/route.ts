@@ -146,14 +146,9 @@ export const featureRequestRouter = router({
       featureRequestId: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // 1. Verify User Plan for AI Execution
       const user = await db.query.users.findFirst({
         where: eq(users.id, ctx.user.id)
       });
-      if (!user || user.plan !== "pro") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Pro subscription required for AI implementation" });
-      }
-
       const feature = await db.query.featureRequests.findFirst({
         where: eq(featureRequests.id, input.featureRequestId),
       });

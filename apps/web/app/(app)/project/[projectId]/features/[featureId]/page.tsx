@@ -26,22 +26,20 @@ const STATUS_LABELS: Record<string, string> = {
 
 // Old PIPELINE_TABS removed in favor of ExecutionTimeline
 
-function getNextAction(
-  status: string,
-  projectId: string,
-  featureId: string,
-  router: ReturnType<typeof useRouter>,
-  prdReady: boolean,
-) {
-  if (status === "submitted" || status === "discovery") {
-    return { label: "Open Discovery Chat →", action: () => router.push(`/project/${projectId}/features/${featureId}/discovery`) };
+import { useFeatureSocket } from "~/hooks/use-feature-socket";
+
+function getNextAction(status: string | undefined, projectId: string, featureId: string, router: any, prdReady: boolean) {
+  if (status === "discovery") {
+    return { label: "Continue Discovery", action: () => router.push(`/project/${projectId}/discovery`) };
   }
   if (status === "prd_draft") {
-    // Only show Review PRD once it's actually generated
-    if (!prdReady) return null;
-    return { label: "Review PRD →", action: () => router.push(`/project/${projectId}/features/${featureId}/prd`) };
+    if (!prdReady) return null; // Wait for PRD to be generated
+    return { label: "Review PRD", action: () => router.push(`/project/${projectId}/features/${featureId}/prd`) };
   }
-  if (status === "prd_approved" || status === "planning") {
+  if (status === "planning") {
+    return { label: "View Tasks →", action: () => router.push(`/project/${projectId}/features/${featureId}/tasks`) };
+  }
+  if (status === "implementing") {
     return { label: "View Tasks →", action: () => router.push(`/project/${projectId}/features/${featureId}/tasks`) };
   }
   if (status === "in_progress") {
@@ -57,16 +55,10 @@ export default function FeatureDetailPage() {
   const featureId = params.featureId as string;
   const utils = trpc.useUtils();
 
+  useFeatureSocket(featureId);
+
   const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery(
-    { featureRequestId: featureId },
-    {
-      // Poll aggressively whenever an AI background process could be running
-      refetchInterval: (query: any) => {
-        const status = query?.state?.data?.status;
-        const activeStatuses = ["submitted", "discovery", "prd_draft", "planning", "implementing", "in_progress", "review"];
-        return activeStatuses.includes(status) ? 2000 : false;
-      }
-    }
+    { featureRequestId: featureId }
   );
 
   // Fetch PRD status so we know whether to show "Review PRD" button
@@ -74,16 +66,19 @@ export default function FeatureDetailPage() {
     { featureRequestId: featureId },
     {
       enabled: feature?.status === "prd_draft",
+      // Light poll only while PRD is still being generated (draft state)
       refetchInterval: (query: any) => {
         const prdData = query?.state?.data;
-        if (!prdData) return 2000; // No PRD yet, keep polling
-        if (prdData?.status === "draft") return 2000; // Still generating
+        if (!prdData || (prdData.status === "draft" && (!prdData.content || prdData.content.length < 50))) {
+          return 3000;
+        }
         return false;
       }
     }
   );
 
-  const prdReady = !!(prd?.content && prd.status !== "draft");
+  // PRD is ready if it has content — either in_review (ideal) or draft with actual content (legacy unstick)
+  const prdReady = !!(prd?.content && prd.content.length > 50);
 
   if (isLoading) {
     return (

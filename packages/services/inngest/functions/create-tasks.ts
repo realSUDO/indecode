@@ -4,6 +4,8 @@ import { prds, tasks, featureRequests } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
 import { generateTasksFromPRD } from "../../ai/agents/planning";
 
+const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
+
 /**
  * Triggered when a PRD is approved.
  * Generates engineering tasks from the PRD and populates the Kanban board.
@@ -67,6 +69,13 @@ export const createTasksFunction = inngest.createFunction(
       await db.update(featureRequests)
         .set({ status: "in_progress" })
         .where(eq(featureRequests.id, featureRequestId));
+        
+      try {
+        await fetch(`${API_BASE_URL}/api/internal/emit`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "in_progress" } })
+        });
+      } catch (e) {}
     });
 
     return { taskCount: generatedTasks.length };
