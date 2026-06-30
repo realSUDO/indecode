@@ -1,135 +1,169 @@
-# Turborepo starter
+# Indecode
 
-This Turborepo starter is maintained by the Turborepo core team.
+> **Build software at the speed of thought.**
 
-## Using this example
+[![Live Demo](https://img.shields.io/badge/Live_Site-indecode.in-blue?style=for-the-badge&logo=vercel)](https://indecode.in)
+[![Demo Video](https://img.shields.io/badge/Demo_Video-Google_Drive-green?style=for-the-badge&logo=googledrive)](https://drive.google.com/drive/folders/1a9HrcTVykX-f4mU2g2LB7Kz5CRUB2zq3?usp=sharing)
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
-```
+## 📖 Overview
 
-## What's inside?
+**Indecode** is a production-grade, autonomous AI software development platform built for modern engineering teams. It bridges the gap between raw product requirements and deployable code. Rather than acting as a simple auto-complete tool or chat interface, Indecode functions as an autonomous agentic worker that integrates directly into your repository and development lifecycle.
 
-This Turborepo includes the following packages/apps:
+The core philosophy behind Indecode is that **writing boilerplate, scaffolding features, and manually opening Pull Requests is low-leverage work**. By automating the translation of plain-english requirements into a structured Product Requirements Document (PRD), a Kanban task list, and finally into merged source code, Indecode empowers engineers and founders to focus on high-level architecture and product strategy.
 
-### Apps and Packages
+### The Problem It Solves
+The modern software development lifecycle is fraught with friction:
+1. **Context Switching:** Developers constantly switch between Jira/Linear, the IDE, GitHub, and deployment platforms.
+2. **Boilerplate Fatigue:** Setting up routes, database schemas, and standard UI components consumes a disproportionate amount of time.
+3. **AI Limitations:** Most AI coding tools (like Copilot or ChatGPT) lack holistic repository context and cannot execute complex, multi-step workflows autonomously.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Who Is This For?
+- **Solo Founders / Indie Hackers:** Move incredibly fast by delegating feature implementations to an autonomous agent.
+- **Open Source Maintainers:** Quickly scaffold out community feature requests.
+- **Engineering Teams:** Standardize feature development by ensuring every feature goes through a rigorous PRD -> Task -> Implementation pipeline.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+---
 
-### Utilities
+## ✨ Key Features
 
-This Turborepo has some additional tools already setup for you:
+### 🧑‍💻 User-Facing Capabilities
+- **Frictionless Onboarding:** Seamless GitHub OAuth integration. Your organization repositories are automatically synced and ready for AI ingestion.
+- **Cross-Domain Context Preservation:** Start typing your feature request on the landing page, and through advanced cookie-based state management, watch it seamlessly transfer into the core application post-authentication.
+- **Autonomous Feature Execution:** 
+  - **Discovery Phase:** The AI scans your repository to understand its architecture and style guidelines.
+  - **PRD Generation:** Translates vague feature ideas into a concrete, technical Product Requirements Document.
+  - **Task Planning:** Breaks the PRD down into a kanban board of actionable, granular engineering tasks (To Do, In Progress, Done).
+  - **Implementation & Review:** The AI writes the code, self-reviews against the PRD, and resolves syntax errors.
+  - **Shipping:** Automatically opens a Pull Request in your GitHub repository.
+- **Real-Time Execution Pipeline UI:** A highly visual, state-machine-driven SVG timeline combined with Framer Motion animations that gives you granular, real-time transparency into exactly what the AI agent is thinking and doing.
+- **Premium Dark-Mode Aesthetic:** A meticulously designed interface focusing on typography, subtle micro-animations, and a distraction-free environment.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### ⚙️ System-Level Engineering
+- **Asynchronous Agent Orchestration:** Leveraging **Inngest**, AI inferences are decoupled from the request-response cycle. This ensures the UI remains snappy while handling minute-long LLM generation tasks.
+- **End-to-End Type Safety:** Utilizing **tRPC**, types are shared seamlessly from the **Drizzle ORM** database schema all the way to the frontend React components. No more out-of-sync APIs.
+- **Monorepo Architecture:** Powered by **Turborepo** and **PNPM**, the codebase is strictly segregated into multiple specialized applications (Marketing, Web App, Authentication, Billing) and shared packages (Database, UI, tRPC routes, Services).
+- **Intelligent Polling:** The frontend utilizes smart React Query polling that dynamically adjusts its frequency based on the active state of the AI agent, optimizing both responsiveness and server load.
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## 🛠️ Tech Stack & Architecture
 
-```
-cd my-turborepo
+Indecode is built on a bleeding-edge, robust architecture optimized for scalability, maintainability, and exceptional developer experience.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+### Core Stack
+- **Framework:** Next.js 15+ (App Router)
+- **Language:** TypeScript (Strict Mode)
+- **Monorepo Tooling:** Turborepo, PNPM workspaces
+- **Styling:** Tailwind CSS, Radix UI primitives, Framer Motion
+- **API Layer:** tRPC for strongly-typed client/server communication
+- **Database:** PostgreSQL (Neon / Supabase), Drizzle ORM
+- **Authentication:** Better-Auth (GitHub Provider)
+- **Background Jobs:** Inngest, `@inngest/ai`
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+### High-Level System Architecture
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+The monorepo is divided into two primary zones: **Apps** and **Packages**.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+#### Apps Directory (`/apps`)
+1. **`web`**: The core SaaS application where users manage projects, view the Kanban boards, and monitor the AI execution timeline.
+2. **`marketing`**: The highly optimized, SEO-friendly landing page (`indecode.in`).
+3. **`auth`**: A dedicated authentication micro-frontend (`auth.indecode.in`) handling GitHub OAuth and onboarding sequences.
+4. **`payment`**: A dedicated billing interface for managing Pro subscriptions.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+#### Packages Directory (`/packages`)
+1. **`database`**: Contains the Drizzle schema, migrations, and database client configuration. Single source of truth for data structures.
+2. **`trpc`**: The centralized API router. Contains protected procedures, middleware, and business logic.
+3. **`services`**: Contains the Inngest client and background event definitions.
 
-### Develop
+#### The AI Orchestration Flow
+When a user clicks "Implement with AI":
+1. The frontend fires a `trpc.featureRequest.triggerImplementation` mutation.
+2. The tRPC router validates the user's Pro subscription, locks the feature request state, and emits a `feature/implement` event to Inngest.
+3. The Inngest background worker picks up the event. It orchestrates a multi-step workflow: fetching GitHub repository contents, generating a PRD via LLM, splitting the PRD into tasks, and systematically executing each task.
+4. Throughout this process, the worker updates the PostgreSQL database.
+5. The Next.js frontend, via tRPC and React Query, polls the database and updates the UI timeline and Kanban board in real-time.
 
-To develop all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
+## 🚀 Getting Started
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+Indecode is designed as a deployment-first SaaS product, heavily reliant on external services. However, if you wish to run it locally or contribute, follow these steps:
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+### Prerequisites
+- Node.js (v20+)
+- PNPM (v9+)
+- A PostgreSQL instance (e.g., local Docker, Neon, Supabase)
+- GitHub OAuth Application (for Auth)
+- Inngest Cloud Account or Local Dev Server
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Installation Setup
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/realSUDO/indecode.git
+   cd indecode
+   ```
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+2. **Install dependencies:**
+   Ensure you are using `pnpm` to respect the workspace configuration.
+   ```bash
+   pnpm install
+   ```
 
-### Remote Caching
+3. **Environment Configuration:**
+   Copy the example environment files in the respective apps and packages. You will need to configure:
+   - `DATABASE_URL` (in `@repo/database`)
+   - `GITHUB_CLIENT_ID` & `GITHUB_CLIENT_SECRET` (in `@repo/auth-core`)
+   - `BETTER_AUTH_SECRET` (in `@repo/auth-core`)
+   - `INNGEST_EVENT_KEY` & `INNGEST_SIGNING_KEY` (in `@repo/services`)
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+4. **Database Migrations:**
+   Push the Drizzle schema to your PostgreSQL database.
+   ```bash
+   cd packages/database
+   pnpm db:push
+   ```
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+5. **Start the Development Server:**
+   Boot up all applications simultaneously using Turborepo.
+   ```bash
+   pnpm dev
+   ```
+   - Marketing: `http://localhost:3000`
+   - Web App: `http://localhost:3003`
+   - Auth: `http://localhost:3002`
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+---
 
-```
-cd my-turborepo
+## 🧠 Design & Product Decisions
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+- **Domain-Level Cookies:** To create a magical onboarding experience, user intent (e.g., typing a feature on the landing page) is preserved using a top-level domain cookie (`.indecode.in`). When the user redirects to `auth.indecode.in` and finally lands on the app (`in.indecode.in`), the context is perfectly restored.
+- **Elimination of "Theme Toggles":** In a bold design choice, Indecode strictly enforces a highly polished, unified Dark Mode across all subdomains. This guarantees a consistent, premium aesthetic and reduces CSS overhead.
+- **Kanban over Lists:** Initially implemented as a vertical list, the task view was redesigned into a 3-column Kanban board to provide users with a recognizable, project-management-style interface that immediately communicates progress.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+---
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## 🗺️ Roadmap & Future Improvements
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+While Indecode is highly functional, the vision extends much further:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+- [ ] **Interactive PRD Refinement:** Introduce a chat interface allowing users to converse with the AI to refine the PRD before the implementation phase begins.
+- [ ] **Custom Agent Personas:** Allow engineering teams to upload their own `.indecode` config files to dictate architectural guidelines, coding standards, and preferred libraries.
+- [ ] **Multi-Branch Management:** Enable the AI to manage long-lived feature branches, automatically rebasing against `main` and resolving merge conflicts.
+- [ ] **Automated Testing Integration:** Expand the AI's capabilities to not only write code but autonomously run Jest/Vitest suites and iterate until tests pass.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+---
 
-## Useful Links
+## 👤 Credits & Author
 
-Learn more about the power of Turborepo:
+Engineered with focus, precision, and a passion for developer tools.
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- **GitHub:** [github.com/realSUDO/indecode](https://github.com/realSUDO/indecode)
+- **LinkedIn:** [linkedin.com/in/realsudo](https://linkedin.com/in/realsudo)
+- **X (Twitter):** [x.com/sudo_core](https://x.com/sudo_core)
+- **Email:** sumitomvishwkarma@gmail.com
+
+---
+*Built for the future of software development. Copyright © 2026 Indecode.*
