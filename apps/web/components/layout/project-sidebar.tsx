@@ -27,7 +27,7 @@ import {
 } from "~/components/ui/sidebar";
 import { trpc } from "~/trpc/client";
 
-import { NavUser } from "./nav-user";
+
 
 export function ProjectSidebar() {
   const params = useParams();
@@ -121,10 +121,6 @@ export function ProjectSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-2">
-        <NavUser />
-      </SidebarFooter>
     </Sidebar>
   );
 }

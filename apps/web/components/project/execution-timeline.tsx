@@ -10,7 +10,8 @@ type Stage = {
 };
 
 export const STAGES: Stage[] = [
-  { key: "discovery", label: "prd", activeFor: ["submitted", "discovery", "prd_draft", "prd_approved"] }, // we call it prd in UI to match the picture
+  { key: "discovery", label: "Discovery", activeFor: ["submitted", "discovery"] },
+  { key: "prd", label: "PRD", activeFor: ["prd_draft", "prd_approved"] },
   { key: "tasks", label: "Task list", activeFor: ["planning", "in_progress"] },
   { key: "tasks", label: "Implement", activeFor: ["implementing"] },
   { key: "reviews", label: "Review", activeFor: ["review"] },
