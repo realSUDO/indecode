@@ -84,6 +84,8 @@ export const adminRouter = router({
         perUserLimit: input.perUserLimit,
       }).returning();
 
+      if (!newCoupon) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create coupon" });
+
       await db.insert(auditLogs).values({
         actorId: ctx.adminUser.id,
         action: "coupon_created",
