@@ -41,7 +41,7 @@ export default function OnboardingPage() {
     const cookies = document.cookie.split("; ");
     const featureCookie = cookies.find((row) => row.startsWith("indecode-cached-feature="));
     if (featureCookie) {
-      setFeatureRequest(decodeURIComponent(featureCookie.split("=")[1]));
+      setFeatureRequest(decodeURIComponent(featureCookie.split("=")[1] || ""));
     }
   }, []);
 
