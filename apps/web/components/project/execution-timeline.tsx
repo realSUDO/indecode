@@ -45,7 +45,7 @@ export function ExecutionTimeline({
   // Calculate which stage we are actually in based on STATUS_ORDER and activeFor
   let activeStageIndex = 0;
   for (let i = STAGES.length - 1; i >= 0; i--) {
-    const stage = STAGES[i];
+    const stage = STAGES[i]!;
     const maxStatusForStageIdx = Math.max(...stage.activeFor.map(s => STATUS_ORDER.indexOf(s)));
     
     // If the current status is equal or past the start of this stage
