@@ -25,8 +25,10 @@ function FeatureRequestCTA() {
     
     setTimeout(() => {
       const isDev = process.env.NODE_ENV !== "production";
-      const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
-      window.location.href = signInUrl;
+      const newProjectUrl = isDev 
+        ? "http://localhost:3003/new" 
+        : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/new`;
+      window.location.href = newProjectUrl;
     }, 800);
   };
 
@@ -299,8 +301,10 @@ function Navbar() {
           <button 
             onClick={() => {
               const isDev = process.env.NODE_ENV !== "production";
-              const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
-              window.location.href = signInUrl;
+              const dashboardUrl = isDev 
+                ? "http://localhost:3003/dashboard" 
+                : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/dashboard`;
+              window.location.href = dashboardUrl;
             }}
             className="px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 hover:scale-105 bg-white text-black hover:bg-neutral-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
           >

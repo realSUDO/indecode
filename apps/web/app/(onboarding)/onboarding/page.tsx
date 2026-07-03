@@ -97,7 +97,7 @@ export default function OnboardingPage() {
       document.cookie = `indecode-cached-feature=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${process.env.NODE_ENV === "production" ? ".indecode.in" : "localhost"}; path=/;`;
       
       toast.success("Feature request submitted successfully!");
-      router.push(`/project/${projectId}`);
+      router.push(`/project/${projectId}/features`);
     } catch (err: any) {
       toast.error(err.message || "Failed to submit feature request");
     }
@@ -202,13 +202,22 @@ export default function OnboardingPage() {
                     className="bg-neutral-900 border-neutral-800 text-white"
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={createProject.isPending}
-                  className="w-full bg-white text-black hover:bg-neutral-200"
-                >
-                  {createProject.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : "Create Project"}
-                </Button>
+                <div className="pt-4 flex flex-col gap-3">
+                  <Button 
+                    type="submit" 
+                    disabled={createProject.isPending}
+                    className="w-full bg-white text-black hover:bg-neutral-200"
+                  >
+                    {createProject.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : "Create Project"}
+                  </Button>
+                  <button 
+                    type="button"
+                    onClick={() => router.push("/dashboard")}
+                    className="text-sm text-neutral-500 hover:text-white transition-colors"
+                  >
+                    Skip for now
+                  </button>
+                </div>
               </form>
             </motion.div>
           )}
@@ -233,12 +242,21 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <Button 
-                onClick={handleStep3}
-                className="w-full bg-white text-black hover:bg-neutral-200"
-              >
-                Continue to Next Step
-              </Button>
+              <div className="pt-4 flex flex-col gap-3">
+                <Button 
+                  onClick={handleStep3}
+                  className="w-full bg-white text-black hover:bg-neutral-200"
+                >
+                  Continue to Next Step
+                </Button>
+                <button 
+                  type="button"
+                  onClick={() => router.push(`/project/${projectId}/features`)}
+                  className="text-sm text-neutral-500 hover:text-white transition-colors text-center"
+                >
+                  Skip for now
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -266,18 +284,18 @@ export default function OnboardingPage() {
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={submitFeature.isPending}
-                  className="w-full bg-white text-black hover:bg-neutral-200"
-                >
-                  {submitFeature.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : "Ship it"}
-                </Button>
-                
-                <div className="pt-4 text-center">
+                <div className="pt-4 flex flex-col gap-3 text-center">
+                  <Button 
+                    type="submit" 
+                    disabled={submitFeature.isPending}
+                    className="w-full bg-white text-black hover:bg-neutral-200"
+                  >
+                    {submitFeature.isPending ? <Loader2 className="animate-spin w-4 h-4" /> : "Ship it"}
+                  </Button>
+                  
                   <button 
                     type="button"
-                    onClick={() => router.push(`/project/${projectId}`)}
+                    onClick={() => router.push(`/project/${projectId}/features`)}
                     className="text-sm text-neutral-500 hover:text-white transition-colors"
                   >
                     Skip for now

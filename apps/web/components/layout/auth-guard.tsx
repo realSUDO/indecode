@@ -19,7 +19,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isLoading) {
       if (!session?.user) {
         const isDev = process.env.NODE_ENV !== "production";
-        const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+        const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+        const signInUrl = isDev 
+          ? `http://localhost:3002/sign-in?callbackURL=${encodeURIComponent(currentUrl)}` 
+          : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in?callbackURL=${encodeURIComponent(currentUrl)}`;
         window.location.href = signInUrl;
         return;
       }

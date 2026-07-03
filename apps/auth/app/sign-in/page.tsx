@@ -5,20 +5,25 @@ import { Button } from "~/components/ui/button";
 import { Github, Code2, Sparkles, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { authClient } from "~/lib/auth-client";
 import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function SignInPage() {
+function SignInContent() {
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
 
   const handleSignIn = async () => {
     setIsLoading(true);
     const isDev = process.env.NODE_ENV !== "production";
-    const dashboardUrl = isDev 
+    const defaultDashboard = isDev 
       ? "http://localhost:3003/dashboard"
       : `https://in.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/dashboard`;
+    
+    const callbackURL = searchParams.get("callbackURL") || defaultDashboard;
 
     await authClient.signIn.social({
       provider: "github",
-      callbackURL: dashboardUrl,
+      callbackURL,
     });
   };
 
@@ -97,5 +102,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }
