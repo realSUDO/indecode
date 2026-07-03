@@ -85,7 +85,7 @@ export default function PullRequestDetailPage() {
               {pr.status === "processing" ? "AI is currently implementing this feature..." : "No diff available."}
             </div>
           ) : (
-            <DiffViewer diffStr={diffData.diff} issues={issues} />
+            <DiffViewer diffStr={diffData.diff} issues={issues as any} />
           )}
         </div>
       </div>
