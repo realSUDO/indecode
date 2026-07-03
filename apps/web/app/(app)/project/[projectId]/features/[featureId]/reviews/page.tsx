@@ -56,7 +56,18 @@ export default function FeatureReviewsPage() {
   const projectId = params.projectId as string;
   const featureId = params.featureId as string;
 
-  const { data: pr, isLoading: isPrLoading } = trpc.pullRequest.getByFeatureId.useQuery({ featureRequestId: featureId });
+  const { data: pr, isLoading: isPrLoading } = trpc.pullRequest.getByFeatureId.useQuery(
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const prData = query?.state?.data;
+        if (!prData) return 3000;
+        const reviewStatus = prData.reviews?.[0]?.status;
+        if (prData.status === "pending" && (!reviewStatus || reviewStatus === "analyzing")) return 3000;
+        return false;
+      }
+    }
+  );
 
   if (isPrLoading) {
     return (

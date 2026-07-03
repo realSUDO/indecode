@@ -90,18 +90,26 @@ export const implementFeatureFunction = inngest.createFunction(
       .orderBy(sql`${similarity} DESC`)
       .limit(10);
 
-      // If branch exists, overwrite with branch's current file content so AI sees existing progress
-      if (branchState.exists) {
-        const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
-        for (const f of results) {
-          try {
-            const { data: fileData } = await octokit.rest.repos.getContent({
-              owner, repo: name, path: f.filePath, ref: branchName
-            });
-            if (fileData && !Array.isArray(fileData) && (fileData as any).content) {
-              f.content = Buffer.from((fileData as any).content, 'base64').toString('utf8');
-            }
-          } catch (e) { /* ignore if not found */ }
+      // OVERWRITE ALL VECTOR CHUNKS WITH FULL FILE CONTENT
+      // The pgvector database only stores chunks of the file. We MUST fetch the full file
+      // from GitHub, otherwise the AI will output diffs against a small chunk, and when applied,
+      // it will delete the rest of the 1000+ line file.
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+      for (const f of results) {
+        try {
+          // If branch exists, fetch from the branch so AI sees current progress. 
+          // Otherwise, fetch from main branch.
+          const refToFetch = branchState.exists ? branchName : (repo.defaultBranch || "main");
+          
+          const { data: fileData } = await octokit.rest.repos.getContent({
+            owner, repo: name, path: f.filePath, ref: refToFetch
+          });
+          
+          if (fileData && !Array.isArray(fileData) && (fileData as any).content) {
+            f.content = Buffer.from((fileData as any).content, 'base64').toString('utf8');
+          }
+        } catch (e) {
+          console.warn(`Could not fetch full file for ${f.filePath} from github. Falling back to vector chunk.`);
         }
       }
       return results;

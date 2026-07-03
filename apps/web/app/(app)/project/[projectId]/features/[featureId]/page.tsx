@@ -45,7 +45,7 @@ function getNextAction(status: string | undefined, projectId: string, featureId:
     return { label: "View Kanban Board →", action: () => router.push(`/project/${projectId}/features/${featureId}/tasks`) };
   }
   if (status === "review") {
-    return { label: "Review & Ship →", action: () => router.push(`/project/${projectId}/features/${featureId}/release`) };
+    return { label: "Review AI Code →", action: () => router.push(`/project/${projectId}/features/${featureId}/reviews`) };
   }
   return null;
 }
