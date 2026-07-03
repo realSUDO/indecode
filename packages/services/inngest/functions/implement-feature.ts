@@ -144,19 +144,36 @@ You are the Lead Engineer, Staff Software Architect (L6+), implementing features
 
 <rules>
 1. NEVER restart implementation. Always build on the existing branch context.
-2. NEVER abandon the current branch.
-3. Write the FULL, working implementation. No TODOs, no placeholders.
-4. Fix any bugs in the codebase related to the feature.
-5. Every implementation must be incremental and merge-ready.
+2. Write the FULL, working implementation. No TODOs, no placeholders.
+3. Fix any bugs in the codebase related to the feature.
+4. When modifying an existing file, YOU MUST PRESERVE ALL EXISTING CODE. Only modify what is strictly necessary. NEVER delete unrelated code.
 </rules>
 
 <output_format>
 First output a think block to analyze requirements, then an analyze block to plan file modifications, then the JSON file changes.
+Use the following JSON schema:
+[
+  {
+    "path": "path/to/existing/file.ts",
+    "action": "modify",
+    "modifications": [
+      {
+        "search": "exact string to replace (must match file exactly, including whitespace)",
+        "replace": "new string to insert"
+      }
+    ]
+  },
+  {
+    "path": "path/to/new/file.ts",
+    "action": "create",
+    "content": "entire new file content here"
+  }
+]
 
 <think>Your analysis here</think>
 <analyze>Your step-by-step plan here</analyze>
 \`\`\`json
-[ { "path": "path/to/file", "content": "entire new file content" } ]
+[ ... ]
 \`\`\`
 </output_format>
 </system_instructions>`;
@@ -166,18 +183,35 @@ You are the Lead Engineer, Staff Software Architect (L6+), implementing features
 
 ### Rules:
 1. NEVER restart implementation. Always build on the existing branch context.
-2. NEVER abandon the current branch.
-3. Write the FULL, working implementation. No TODOs, no placeholders.
-4. Fix any bugs in the codebase related to the feature.
-5. Every implementation must be incremental and merge-ready.
+2. Write the FULL, working implementation. No TODOs, no placeholders.
+3. Fix any bugs in the codebase related to the feature.
+4. When modifying an existing file, YOU MUST PRESERVE ALL EXISTING CODE. Only modify what is strictly necessary. NEVER delete unrelated code.
 
 ### Output Format:
 First output a think block to analyze requirements, then an analyze block to plan file modifications, then the JSON file changes.
+Use the following JSON schema:
+[
+  {
+    "path": "path/to/existing/file.ts",
+    "action": "modify",
+    "modifications": [
+      {
+        "search": "exact string to replace (must match file exactly, including whitespace)",
+        "replace": "new string to insert"
+      }
+    ]
+  },
+  {
+    "path": "path/to/new/file.ts",
+    "action": "create",
+    "content": "entire new file content here"
+  }
+]
 
 <think>Your analysis here</think>
 <analyze>Your step-by-step plan here</analyze>
 \`\`\`json
-[ { "path": "path/to/file", "content": "entire new file content" } ]
+[ ... ]
 \`\`\`
 
 ### Response:`;
@@ -212,7 +246,38 @@ ${contextStr}`;
               } else {
                 jsonStr = jsonStr.replace(/```json|```/g, "").trim();
               }
-              fileChanges = JSON.parse(jsonStr);
+              const parsed = JSON.parse(jsonStr);
+              fileChanges = parsed.map((change: any) => {
+                if (change.action === "create" || change.content) {
+                  return { path: change.path, content: change.content };
+                }
+                if (change.action === "modify" && change.modifications) {
+                  const existingFile = contextFiles.find((f: any) => f.filePath === change.path);
+                  let updatedContent = existingFile ? existingFile.content : "";
+                  if (!updatedContent) {
+                    console.warn(`File ${change.path} not found in context for modification.`);
+                    // Fallback if they provide full content anyway despite the schema
+                    return change.content ? { path: change.path, content: change.content } : null;
+                  }
+                  for (const mod of change.modifications) {
+                    if (updatedContent.includes(mod.search)) {
+                      updatedContent = updatedContent.replace(mod.search, mod.replace);
+                    } else {
+                      console.warn(`Exact match failed for modification in ${change.path}.`);
+                      // Simple fallback: try replacing with normalized newlines
+                      const normSearch = mod.search.replace(/\r\n/g, "\n");
+                      const normContent = updatedContent.replace(/\r\n/g, "\n");
+                      if (normContent.includes(normSearch)) {
+                        updatedContent = normContent.replace(normSearch, mod.replace);
+                      }
+                    }
+                  }
+                  return { path: change.path, content: updatedContent };
+                }
+                // Fallback for old prompt format just in case
+                if (change.path && change.content) return { path: change.path, content: change.content };
+                return null;
+              }).filter(Boolean);
               break; // Success
             } catch (e) {
               console.warn(`Attempt ${attempt} failed to parse AI JSON output:`, e);
