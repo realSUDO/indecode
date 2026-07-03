@@ -1,7 +1,7 @@
 import { inngest } from "../client";
 import { db } from "@repo/database";
-import { repositories, codebaseEmbeddings } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { repositories, codebaseEmbeddings, pullRequests, featureRequests } from "@repo/database/schema";
+import { eq, and, like } from "drizzle-orm";
 import { getInstallationOctokit } from "../../github/index";
 import { embedCode } from "../../ai/embeddings";
 
@@ -96,6 +96,53 @@ export const syncRepoCodebase = inngest.createFunction(
         }
       });
     }
+
+    await step.run("sync-existing-prs", async () => {
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+      
+      const { data: openPrs } = await octokit.rest.pulls.list({
+        owner,
+        repo: name,
+        state: "open",
+        per_page: 100
+      });
+
+      for (const pr of openPrs) {
+        let linkedFeatureId = null;
+        const branchPrefix = "feature/indecode-";
+        
+        if (pr.head.ref.startsWith(branchPrefix)) {
+          const shortId = pr.head.ref.slice(branchPrefix.length);
+          const match = await db.query.featureRequests.findFirst({
+            where: like(featureRequests.id, shortId + "%")
+          });
+          if (match) {
+            linkedFeatureId = match.id;
+          }
+        }
+
+        const existingPr = await db.query.pullRequests.findFirst({
+          where: and(
+            eq(pullRequests.repositoryId, repo.id),
+            eq(pullRequests.prNumber, pr.number)
+          )
+        });
+
+        if (!existingPr) {
+          await db.insert(pullRequests).values({
+            repositoryId: repo.id,
+            installationId: repo.githubInstallation.installationId,
+            prNumber: pr.number,
+            title: pr.title,
+            authorLogin: pr.user?.login || "unknown",
+            headSha: pr.head.sha,
+            baseBranch: pr.base.ref,
+            status: "pending",
+            featureRequestId: linkedFeatureId,
+          });
+        }
+      }
+    });
 
     await step.run("update-status", async () => {
       await db.update(repositories).set({
