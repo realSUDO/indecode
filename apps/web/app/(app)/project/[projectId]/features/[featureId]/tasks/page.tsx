@@ -160,6 +160,15 @@ export default function TasksPage() {
             {implementMutation.isPending ? "Starting AI Agent..." : "Implement with AI"}
           </button>
         )}
+
+        {feature?.status === "review" && (
+          <button 
+            onClick={() => router.push(`/project/${projectId}/features/${featureId}/release`)}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+          >
+            Review & Ship →
+          </button>
+        )}
       </div>
 
       {/* Task Kanban */}

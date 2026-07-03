@@ -44,6 +44,9 @@ function getNextAction(status: string | undefined, projectId: string, featureId:
   if (status === "in_progress") {
     return { label: "View Kanban Board →", action: () => router.push(`/project/${projectId}/features/${featureId}/tasks`) };
   }
+  if (status === "review") {
+    return { label: "Review & Ship →", action: () => router.push(`/project/${projectId}/features/${featureId}/release`) };
+  }
   return null;
 }
 
@@ -210,7 +213,9 @@ export default function FeatureDetailPage() {
                   : "AI is generating the PRD. This usually takes 30–60 seconds...",
                 prd_approved: "PRD approved! Tasks will now be generated on the Kanban board.",
                 planning: "AI is generating engineering tasks from your PRD...",
-                in_progress: "AI is implementing your feature. Watch the Kanban board for live updates.",
+                in_progress: "Tasks are ready. Trigger AI implementation when ready.",
+                implementing: "AI is implementing your feature. Watch the Kanban board for live updates.",
+                review: "AI implementation is complete. Review the PR and ship it!",
               } as Record<string, string>)[feature.status as string] ?? "Continue your workflow."}
             </p>
           </div>
