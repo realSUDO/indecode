@@ -60,7 +60,7 @@ export default function DiscoveryPage() {
     if (textareaRef.current) {
       textareaRef.current.style.height = "56px";
       const scrollHeight = textareaRef.current.scrollHeight;
-      setInputHeight(Math.min(scrollHeight, 200));
+      setInputHeight(Math.min(scrollHeight, 128));
     }
   };
 
@@ -293,7 +293,7 @@ export default function DiscoveryPage() {
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
               placeholder="Message Indecode AI... (Shift+Enter for newline)"
               disabled={sendMessageMutation.isPending || initializeMutation.isPending}
-              className="w-full resize-none pr-14 pl-5 py-4 bg-background border border-border hover:border-border/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-2xl shadow-sm text-base text-foreground placeholder:text-muted-foreground"
+              className="w-full resize-none pr-14 pl-5 py-4 bg-background border border-border hover:border-border/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-2xl shadow-sm text-base text-foreground placeholder:text-muted-foreground [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
               rows={1}
             />
             <Button
