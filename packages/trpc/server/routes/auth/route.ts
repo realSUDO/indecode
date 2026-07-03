@@ -26,7 +26,7 @@ export const authRouter = router({
         where: eq(users.id, ctx.user.id)
       });
 
-      const featureCountRes = await db.select({ count: count() }).from(featureRequests).where(eq(featureRequests.userId, ctx.user.id));
+      const featureCountRes = await db.select({ count: count() }).from(featureRequests).where(eq(featureRequests.createdById, ctx.user.id));
       const featuresCreated = featureCountRes[0]?.count || 0;
 
       return { 
