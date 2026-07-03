@@ -15,6 +15,36 @@ import remarkGfm from "remark-gfm";
 import { ModelBadge } from "~/components/ui/model-badge";
 import { Textarea } from "~/components/ui/textarea";
 
+const PenAvatar = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="210 70 260 260" xmlns="http://www.w3.org/2000/svg">
+    <title>Animated pen avatar</title>
+    <desc>A circular avatar with a pen icon that tilts as if writing</desc>
+    <style>{`
+      .pen-bg { fill: #0B0B0B; }
+      .pen-icon { transform-origin: 340px 200px; animation: write 2.4s ease-in-out infinite; }
+      .pen-trace { stroke-dasharray: 220; animation: draw 2.4s ease-in-out infinite; }
+      @keyframes write {
+        0% { transform: rotate(-6deg) translate(-10px, 4px); }
+        50% { transform: rotate(6deg) translate(10px, -4px); }
+        100% { transform: rotate(-6deg) translate(-10px, 4px); }
+      }
+      @keyframes draw {
+        0% { stroke-dashoffset: 220; opacity: 0; }
+        15% { opacity: 0.9; }
+        85% { opacity: 0.9; }
+        100% { stroke-dashoffset: 0; opacity: 0; }
+      }
+    `}</style>
+    <circle className="pen-bg" cx="340" cy="200" r="130"/>
+    <path className="pen-trace" d="M270 250 Q300 220, 320 245 T360 240 T400 250" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+    <g className="pen-icon">
+      <rect x="330" y="130" width="20" height="90" rx="8" fill="#FFFFFF"/>
+      <path d="M330 220 L340 245 L350 220 Z" fill="#FFFFFF"/>
+      <rect x="330" y="150" width="20" height="10" fill="#0B0B0B" opacity="0.35"/>
+    </g>
+  </svg>
+);
+
 export default function DiscoveryPage() {
   const params = useParams();
   const router = useRouter();
@@ -156,8 +186,8 @@ export default function DiscoveryPage() {
         <div className="max-w-4xl mx-auto space-y-8 pb-32">
           {initializeMutation.isPending && session.messages.length === 0 && (
             <div className="flex gap-4 animate-pulse">
-              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-primary" />
+              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+                <PenAvatar className="w-10 h-10 rounded-full shadow-sm" />
               </div>
               <div className="flex-1 pt-2">
                 <div className="flex items-center gap-3 text-muted-foreground font-medium text-sm">
@@ -176,13 +206,13 @@ export default function DiscoveryPage() {
                     <User className="w-5 h-5 text-muted-foreground" />
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
-                    <Bot className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    <PenAvatar className="w-10 h-10 rounded-full shadow-sm" />
                   </div>
                 )}
               </div>
               <div className={`flex-1 flex ${msg.role === "user" ? "justify-end" : "justify-start"} pt-1`}>
-                <div className={`${msg.role === "user" ? "bg-primary text-primary-foreground px-5 py-3.5 rounded-2xl rounded-tr-sm shadow-sm inline-block max-w-[85%]" : "text-foreground w-full max-w-[90%]"}`}>
+                <div className={`${msg.role === "user" ? "bg-zinc-200 text-zinc-900 px-5 py-3.5 rounded-2xl rounded-tr-sm shadow-sm inline-block max-w-[85%]" : "text-foreground w-full max-w-[90%]"}`}>
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -197,22 +227,22 @@ export default function DiscoveryPage() {
                         const match = /language-(\w+)/.exec(className || '');
                         const isInline = !match && !className;
                         return isInline ? (
-                          <code className={`${msg.role === 'user' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'} px-1.5 py-0.5 rounded-md text-sm font-mono`} {...props}>{children}</code>
+                          <code className={`${msg.role === 'user' ? 'bg-zinc-300/60 text-zinc-900' : 'bg-muted text-muted-foreground'} px-1.5 py-0.5 rounded-md text-sm font-mono`} {...props}>{children}</code>
                         ) : (
                           <pre className="bg-zinc-950 border border-border p-4 rounded-xl overflow-x-auto mb-4 mt-2">
                             <code className="text-sm font-mono text-zinc-300" {...props}>{children}</code>
                           </pre>
                         );
                       },
-                      blockquote: ({node, ...props}) => <blockquote className={`border-l-4 ${msg.role === 'user' ? 'border-primary-foreground/30 text-primary-foreground/80' : 'border-primary/30 text-muted-foreground'} pl-4 italic mb-4`} {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className={`border-l-4 ${msg.role === 'user' ? 'border-zinc-400 text-zinc-700' : 'border-primary/30 text-muted-foreground'} pl-4 italic mb-4`} {...props} />,
                       table: ({node, ...props}) => <div className="overflow-x-auto mb-4 border border-border rounded-lg"><table className="w-full text-left border-collapse" {...props} /></div>,
-                      th: ({node, ...props}) => <th className={`border-b ${msg.role === 'user' ? 'border-primary-foreground/20 bg-primary-foreground/10' : 'border-border bg-muted/50'} py-3 px-4 font-semibold text-sm`} {...props} />,
-                      td: ({node, ...props}) => <td className={`border-b ${msg.role === 'user' ? 'border-primary-foreground/10' : 'border-border'} py-3 px-4 text-sm`} {...props} />,
+                      th: ({node, ...props}) => <th className={`border-b ${msg.role === 'user' ? 'border-zinc-300 bg-zinc-300/30' : 'border-border bg-muted/50'} py-3 px-4 font-semibold text-sm`} {...props} />,
+                      td: ({node, ...props}) => <td className={`border-b ${msg.role === 'user' ? 'border-zinc-300/50' : 'border-border'} py-3 px-4 text-sm`} {...props} />,
                     }}
                   >
                     {msg.content}
                   </ReactMarkdown>
-                  <div className={`text-[10px] mt-2 font-medium tracking-wide ${msg.role === "user" ? "text-primary-foreground/70 text-right" : "text-muted-foreground"}`}>
+                  <div className={`text-[10px] mt-2 font-medium tracking-wide ${msg.role === "user" ? "text-zinc-500 text-right" : "text-muted-foreground"}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </div>
                 </div>
@@ -222,8 +252,8 @@ export default function DiscoveryPage() {
 
           {sendMessageMutation.isPending && (
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
-                <Bot className="w-5 h-5 text-primary" />
+              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+                <PenAvatar className="w-10 h-10 rounded-full shadow-sm" />
               </div>
               <div className="flex-1 pt-2">
                 <div className="flex items-center gap-3 text-muted-foreground font-medium text-sm">
