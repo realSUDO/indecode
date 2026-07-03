@@ -26,14 +26,24 @@ export default function TasksPage() {
   useFeatureSocket(featureId);
 
   const { data: feature } = trpc.featureRequest.getById.useQuery(
-    { featureRequestId: featureId }
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const status = query?.state?.data?.status;
+        if (status === "planning" || status === "implementing") return 3000;
+        return false;
+      }
+    }
   );
   
   const isGenerating = feature?.status === "planning";
   const isImplementing = feature?.status === "implementing";
 
   const { data: taskList, isLoading } = trpc.task.listByFeature.useQuery(
-    { featureRequestId: featureId }
+    { featureRequestId: featureId },
+    {
+      refetchInterval: () => (isGenerating || isImplementing ? 3000 : false)
+    }
   );
 
   const implementMutation = trpc.featureRequest.triggerImplementation.useMutation({

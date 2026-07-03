@@ -12,8 +12,29 @@ export default function FeatureReleasePage() {
   const featureId = params.featureId as string;
 
   const utils = trpc.useUtils();
-  const { data: feature, isLoading: isFeatureLoading } = trpc.featureRequest.getById.useQuery({ featureRequestId: featureId });
-  const { data: pr, isLoading: isPrLoading } = trpc.pullRequest.getByFeatureId.useQuery({ featureRequestId: featureId });
+  const { data: feature, isLoading: isFeatureLoading } = trpc.featureRequest.getById.useQuery(
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const status = query?.state?.data?.status;
+        if (status === "implementing" || status === "review") return 3000;
+        return false;
+      }
+    }
+  );
+  
+  const { data: pr, isLoading: isPrLoading } = trpc.pullRequest.getByFeatureId.useQuery(
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const prData = query?.state?.data;
+        if (!prData) return 3000; // Keep polling until PR is created
+        const reviewStatus = prData.reviews?.[0]?.status;
+        if (prData.status === "pending" && (!reviewStatus || reviewStatus === "analyzing")) return 3000;
+        return false;
+      }
+    }
+  );
   
   const [commitMessage, setCommitMessage] = useState("");
 

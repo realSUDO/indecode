@@ -58,7 +58,16 @@ export default function FeatureDetailPage() {
   useFeatureSocket(featureId);
 
   const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery(
-    { featureRequestId: featureId }
+    { featureRequestId: featureId },
+    {
+      refetchInterval: (query: any) => {
+        const status = query?.state?.data?.status;
+        if (status === "prd_draft" || status === "planning" || status === "implementing") {
+          return 3000;
+        }
+        return false;
+      }
+    }
   );
 
   // Fetch PRD status so we know whether to show "Review PRD" button
