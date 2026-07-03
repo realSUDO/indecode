@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "devDependencies": {
+    "@ai-sdk/provider": "^4.0.2",
+    "@octokit/core": "^7.0.6",
+    "@octokit/plugin-paginate-rest": "^14.0.0",
+    "@octokit/plugin-rest-endpoint-methods": "^17.0.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "dotenv-cli": "^11.0.0",
@@ -24,10 +28,3 @@
     "zod": "^4.3.5"
   }
 }
-
-
-
-
-
-
-

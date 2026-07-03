@@ -115,15 +115,15 @@ export default function DiscoveryPage() {
   const isCompleted = session.status === "completed";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-64px)] w-full relative">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push(`/project/${projectId}/features/${featureId}`)}>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10" onClick={() => router.push(`/project/${projectId}/features/${featureId}`)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h2 className="font-semibold text-sm">{feature?.title || "Discovery"}</h2>
+            <h2 className="font-semibold text-sm text-white">{feature?.title || "Discovery"}</h2>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={isCompleted ? "bg-green-500/10 text-green-500" : "bg-purple-500/10 text-purple-500"}>
                 {isCompleted ? "Completed" : "Active"}
@@ -153,30 +153,39 @@ export default function DiscoveryPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-8 space-y-8">
-        {initializeMutation.isPending && session.messages.length === 0 && (
-          <div className="max-w-3xl mx-auto flex gap-6 animate-pulse">
-            <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
-              AI PM
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 text-neutral-400">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Analyzing your feature request...</span>
+      <div className="flex-1 overflow-y-auto px-4 py-8 scroll-smooth w-full">
+        <div className="max-w-4xl mx-auto space-y-8 pb-12">
+          {initializeMutation.isPending && session.messages.length === 0 && (
+            <div className="flex gap-6 animate-pulse">
+              <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg">
+                <Bot className="w-6 h-6 text-indigo-400" />
+              </div>
+              <div className="flex-1 pt-2">
+                <div className="flex items-center gap-3 text-indigo-400/70 font-medium text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Analyzing your feature request...</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {session.messages.map((msg: any) => (
-          <div key={msg.id} className="border-b border-white/5 pb-8 last:border-0 last:pb-0">
-            <div className="max-w-3xl mx-auto flex gap-6">
-              <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
-                {msg.role === "user" ? "You" : "AI PM"}
+          {session.messages.map((msg: any) => (
+            <div key={msg.id} className="flex gap-6">
+              <div className="flex-shrink-0 w-12">
+                {msg.role === "user" ? (
+                  <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center ml-2 shadow-lg">
+                    <User className="w-5 h-5 text-neutral-400" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.15)]">
+                    <Bot className="w-6 h-6 text-indigo-400" />
+                  </div>
+                )}
               </div>
-              <div className="flex-1 text-neutral-300">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
+              <div className={`flex-1 text-neutral-300 pt-1`}>
+                <div className={`${msg.role === "user" ? "bg-white/5 px-5 py-4 rounded-3xl rounded-tl-sm border border-white/5 inline-block max-w-[85%]" : ""}`}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
                   components={{
                     p: ({node, ...props}) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
                     h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 mt-6 text-white" {...props} />,
@@ -203,50 +212,51 @@ export default function DiscoveryPage() {
                   }}
                 >
                   {msg.content}
-                </ReactMarkdown>
-                <div className="text-[10px] text-neutral-500 mt-4 font-medium tracking-wide">
-                  {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </ReactMarkdown>
+                  <div className={`text-[10px] text-neutral-500 mt-3 font-medium tracking-wide ${msg.role === "user" ? "opacity-70" : ""}`}>
+                    {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {sendMessageMutation.isPending && (
-          <div className="max-w-3xl mx-auto flex gap-6 animate-pulse">
-            <div className="flex-shrink-0 w-24 text-xs font-semibold text-neutral-500 uppercase tracking-widest pt-1">
-              AI PM
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 text-neutral-400">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Thinking...</span>
+          {sendMessageMutation.isPending && (
+            <div className="flex gap-6 animate-pulse">
+              <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg">
+                <Bot className="w-6 h-6 text-indigo-400" />
+              </div>
+              <div className="flex-1 pt-2">
+                <div className="flex items-center gap-3 text-indigo-400/70 font-medium text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Thinking...</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
+        </div>
       </div>
 
       {/* Input */}
       {!isCompleted && (
-        <div className="border-t border-white/10 px-4 py-4 bg-[#0A0A0A]">
-          <div className="max-w-3xl mx-auto pl-[120px] relative">
+        <div className="sticky bottom-0 bg-gradient-to-t from-[#0E0E11] via-[#0E0E11] to-transparent pt-10 pb-6 px-4 z-10 w-full">
+          <div className="max-w-3xl mx-auto relative group">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Type your response... (Shift+Enter for newline)"
+              placeholder="Message Indecode AI... (Shift+Enter for newline)"
               disabled={sendMessageMutation.isPending || initializeMutation.isPending}
-              className="min-h-[60px] max-h-[200px] resize-none pr-12 bg-white/5 border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 rounded-xl"
+              className="min-h-[60px] max-h-[200px] resize-none pr-14 pl-5 py-4 bg-[#141416] border border-white/10 hover:border-white/20 focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-2xl shadow-2xl transition-all"
               rows={1}
             />
             <Button
               onClick={handleSend}
               size="icon"
               disabled={!message.trim() || sendMessageMutation.isPending || initializeMutation.isPending}
-              className="absolute right-3 bottom-3 h-8 w-8 bg-white text-black hover:bg-neutral-200 rounded-lg"
+              className="absolute right-2 bottom-2 h-10 w-10 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:bg-white/10 disabled:text-white/30"
             >
               <Send className="w-4 h-4" />
             </Button>

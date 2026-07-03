@@ -40,6 +40,13 @@ export function ProjectSidebar() {
   const { data: project } = trpc.project.getById.useQuery({ projectId }, {
     enabled: !!projectId
   });
+  
+  const { data: pullRequests } = trpc.pullRequest.listByProject.useQuery({ projectId }, {
+    enabled: !!projectId
+  });
+
+  const activePRs = pullRequests?.filter((pr: any) => pr.status === "open" || pr.status === "processing" || pr.status === "draft") || [];
+  const closedPRs = pullRequests?.filter((pr: any) => pr.status === "closed" || pr.status === "merged") || [];
 
   return (
     <Sidebar variant="floating" collapsible="icon" className="animate-in fade-in duration-300">
@@ -106,19 +113,60 @@ export function ProjectSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  tooltip="Pull Requests"
-                  isActive={pathname.includes("/pulls")}
-                  className="h-10 px-3 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white"
-                >
-                  <Link href={`/project/${projectId}/pulls`}>
-                    <GitPullRequest className="size-4" />
-                    <span className="font-medium">Pull Requests</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* Removed old single Pull Request Link */}
+
+              {/* Added Collapsible Pull Requests Section */}
+              <div className="mt-4 mb-1 px-3 flex items-center justify-between group-data-[collapsible=icon]:hidden">
+                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Pull Requests</span>
+                <Link href={`/project/${projectId}/pulls`} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GitPullRequest className="size-3 text-neutral-500 hover:text-white" />
+                </Link>
+              </div>
+              
+              {activePRs.length > 0 && (
+                <>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/70 mb-1 px-4 group-data-[collapsible=icon]:hidden">Active</div>
+                  {activePRs.map((pr: any) => (
+                    <SidebarMenuItem key={pr.id}>
+                      <SidebarMenuButton 
+                        asChild 
+                        tooltip={pr.title}
+                        isActive={pathname === `/project/${projectId}/pulls/${pr.id}`}
+                        className={`h-8 px-4 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white text-sm ${pr.isIndecode ? "text-neutral-200" : "text-neutral-500 opacity-60"}`}
+                      >
+                        <Link href={`/project/${projectId}/pulls/${pr.id}`}>
+                          <GitPullRequest className={`size-3.5 ${pr.isIndecode ? "text-emerald-500" : "text-neutral-500"}`} />
+                          <span className="font-medium truncate">{pr.title}</span>
+                          {pr.isIndecode && <span className="ml-auto text-[8px] uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded">AI</span>}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
+
+              {closedPRs.length > 0 && (
+                <>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 mb-1 px-4 mt-2 group-data-[collapsible=icon]:hidden">History</div>
+                  {closedPRs.map((pr: any) => (
+                    <SidebarMenuItem key={pr.id}>
+                      <SidebarMenuButton 
+                        asChild 
+                        tooltip={pr.title}
+                        isActive={pathname === `/project/${projectId}/pulls/${pr.id}`}
+                        className={`h-8 px-4 rounded-lg data-[active=true]:bg-white/10 data-[active=true]:text-white text-sm hover:text-neutral-300 ${pr.isIndecode ? "text-neutral-400" : "text-neutral-600 opacity-50"}`}
+                      >
+                        <Link href={`/project/${projectId}/pulls/${pr.id}`}>
+                          <GitPullRequest className="size-3.5" />
+                          <span className="font-medium truncate">{pr.title}</span>
+                          {pr.isIndecode && <span className="ml-auto text-[8px] uppercase tracking-widest bg-neutral-500/20 text-neutral-400 px-1 py-0.5 rounded">AI</span>}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -188,6 +188,23 @@ export default function PRDPage() {
   }
 
   if (!prd) {
+    if (feature?.status === "prd_draft") {
+      return (
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] text-center space-y-6 animate-in fade-in duration-500">
+          <div className="w-20 h-20 rounded-3xl bg-gray-900 border border-gray-800 flex items-center justify-center shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-yellow-500/10 animate-pulse" />
+            <svg className="w-10 h-10 text-yellow-400 relative z-10 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-xl text-white font-semibold">AI is drafting your PRD...</h3>
+            <p className="text-gray-400 text-sm mt-2 max-w-sm mx-auto">Please wait while we structure the requirements from your discovery session. This usually takes 30-60 seconds.</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] text-center space-y-6 animate-in fade-in duration-500">
         <div className="w-20 h-20 rounded-3xl bg-gray-900 border border-gray-800 flex items-center justify-center shadow-2xl relative overflow-hidden">

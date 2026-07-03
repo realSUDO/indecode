@@ -16,7 +16,8 @@ import { relations } from "drizzle-orm";
 import { repositories } from "./repository";
 import { featureRequests } from "./feature-request";
 
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const projectsRelations = relations(projects, ({ one, many }) => ({
   repositories: many(repositories),
   featureRequests: many(featureRequests),
+  user: one(users, { fields: [projects.userId], references: [users.id] }),
 }));

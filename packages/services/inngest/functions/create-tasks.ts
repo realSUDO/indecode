@@ -33,6 +33,11 @@ export const createTasksFunction = inngest.createFunction(
     const feature = await step.run("load-feature", async () => {
       const f = await db.query.featureRequests.findFirst({
         where: eq(featureRequests.id, featureRequestId),
+        with: {
+          project: {
+            with: { user: true }
+          }
+        }
       });
       if (!f) throw new Error(`Feature request ${featureRequestId} not found`);
       return f;
@@ -42,6 +47,7 @@ export const createTasksFunction = inngest.createFunction(
       return generateTasksFromPRD({
         featureTitle: feature.title,
         prdContent: prd.content,
+        plan: (feature as any).project?.user?.plan as "free" | "pro" | "enterprise" | undefined,
       });
     });
 
@@ -51,17 +57,28 @@ export const createTasksFunction = inngest.createFunction(
 
       if (generatedTasks.length === 0) return;
 
-      await db.insert(tasks).values(
-        generatedTasks.map((t: any, index: number) => ({
-          featureRequestId,
-          title: t.title,
-          description: t.description,
-          priority: t.priority,
-          complexity: t.complexity,
-          status: "todo" as const,
-          sortOrder: index,
-        }))
-      );
+      const newTasks = generatedTasks.map((t: any, index: number) => ({
+        id: crypto.randomUUID(), // Ensure IDs exist for the socket event
+        featureRequestId,
+        title: t.title,
+        description: t.description,
+        priority: t.priority,
+        complexity: t.complexity,
+        status: "todo" as const,
+        sortOrder: index,
+      }));
+
+      await db.insert(tasks).values(newTasks);
+      
+      // Emit the newly generated tasks so the UI populates instantly
+      try {
+        await fetch(`${API_BASE_URL}/api/internal/emit`, {
+          method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
+          body: JSON.stringify({ event: "tasksGenerated", featureId: featureRequestId, data: newTasks })
+        });
+      } catch (e) {
+        console.warn("Failed to emit tasksGenerated socket event:", e);
+      }
     });
 
     // Step 4: Update feature status to in_progress
@@ -72,10 +89,12 @@ export const createTasksFunction = inngest.createFunction(
         
       try {
         await fetch(`${API_BASE_URL}/api/internal/emit`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
           body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "in_progress" } })
         });
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Failed to emit featureUpdated socket event:", e);
+      }
     });
 
     return { taskCount: generatedTasks.length };

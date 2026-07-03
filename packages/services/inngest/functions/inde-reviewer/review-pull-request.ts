@@ -1,17 +1,18 @@
 import { inngest } from "../../client";
 import { db } from "@repo/database";
-import { pullRequests, reviews, reviewIssues, prds, tasks, codebaseEmbeddings } from "@repo/database/schema";
+import { pullRequests, reviews, reviewIssues, prds, tasks, codebaseEmbeddings, featureRequests } from "@repo/database/schema";
 import { eq, sql } from "drizzle-orm";
 import { getInstallationOctokit } from "../../../github/index";
 import { generateText } from "ai";
-import { getPlanningModel } from "../../../ai/index";
-import { getPullRequestFiles, PrFile } from "./pr-files";
+import { getReviewModel } from "../../../ai/index";
+import { getPullRequestFiles } from "./pr-files";
 import { embedCode } from "../../../ai/embeddings";
 
 export const reviewPullRequest = inngest.createFunction(
   { 
     id: "inde-reviewer", 
     name: "Advanced AI Code Review",
+    retries: 3,
     triggers: [{ event: "github/pr.received" }]
   },
   async ({ event, step }) => {
@@ -42,13 +43,18 @@ export const reviewPullRequest = inngest.createFunction(
           repository: {
             with: {
               githubInstallation: true,
+              project: {
+                with: {
+                  user: true
+                }
+              }
             }
           },
           featureRequest: true,
         }
       });
       if (!pr) throw new Error("PR not found");
-      return pr;
+      return pr as any;
     });
 
     const files = await step.run("fetch-files", async () => {
@@ -61,8 +67,15 @@ export const reviewPullRequest = inngest.createFunction(
 
     if (files.length === 0) {
       await step.run("mark-empty", async () => {
-        await db.update(reviews).set({ status: "completed", summary: "No code changes to review.", overallVerdict: "approved" })
-          .where(eq(reviews.pullRequestId, pullRequestId));
+        // Get latest review row to update specifically
+        const latestReview = await db.query.reviews.findFirst({
+          where: eq(reviews.pullRequestId, pullRequestId),
+          orderBy: (reviews, { desc }) => [desc(reviews.createdAt)]
+        });
+        if (latestReview) {
+          await db.update(reviews).set({ status: "completed", summary: "No code changes to review.", overallVerdict: "approved" })
+            .where(eq(reviews.id, latestReview.id));
+        }
         await db.update(pullRequests).set({ status: "approved" }).where(eq(pullRequests.id, pullRequestId));
       });
       return { success: true, message: "No files to review." };
@@ -106,30 +119,180 @@ export const reviewPullRequest = inngest.createFunction(
       const diffStr = files.map(f => `FILE: ${f.filePath}\n\`\`\`diff\n${f.patch}\n\`\`\``).join("\n\n");
       const repoContextStr = repoContext.map(r => `FILE: ${r.filePath}\n${r.content}`).join("\n\n");
 
-      const response = await generateText({
-        model: getPlanningModel(),
-        system: `You are Inde-Reviewer, an expert Staff Engineer and Code Reviewer.
-Your goal is to review a Pull Request diff against the provided PRD, Tasks, and Repository Context.
+      const isPaid = (prInfo.repository as any)?.project?.user?.plan === "pro" || (prInfo.repository as any)?.project?.user?.plan === "enterprise";
+
+      const systemOpenLM = `<system_instructions>
+You are an elite Senior AI Prompt Engineer and L6+ Staff Engineer at Google.
+Your role is to review a Pull Request diff against the provided PRD, Tasks, and Repository Context.
+
+<rules>
+1. Strictly Professional: Do NOT use emojis. Do NOT use filler words. Do NOT generate boilerplate text.
+2. High Signal Only: Every line you write must carry high signal and tangible value. Avoid generic praises.
+3. Be Precise: Look for architectural correctness, security flaws, performance bottlenecks, and strict alignment with the PRD.
+4. Actionable Suggestions: When describing an issue, the suggestion must be an exact technical solution or code fix.
+</rules>
+
+<output_format>
 Output a JSON object exactly matching this structure (no markdown wrapper):
 {
-  "summary": "Overall summary of the review",
+  "summary": "Concise, high-signal summary of the review",
   "overallVerdict": "approved" | "changes_required" | "needs_discussion",
   "issues": [
     {
       "severity": "blocking" | "high" | "medium" | "low" | "suggestion",
-      "title": "Issue title",
-      "description": "Detailed description of the issue",
+      "title": "Clear, technical issue title",
+      "description": "Precise explanation of the flaw and why it matters",
       "filePath": "path/to/file",
       "lineNumber": 123 (approximate line number within the file, MUST be a number or null),
-      "suggestion": "How to fix the issue"
+      "suggestion": "Exact technical solution or code fix"
     }
   ]
 }
-Be precise. Look for correctness, security, performance, and alignment with the PRD.
-If there are no major issues, output "approved" for overallVerdict.`,
-        prompt: `
+If there are no major issues, output "approved" for overallVerdict.
+</output_format>
+
+<examples>
+<example_flawed_implementation>
+{
+  "summary": "The PR implements the caching layer, but introduces a race condition and lacks proper error handling for the Redis client.",
+  "overallVerdict": "changes_required",
+  "issues": [
+    {
+      "severity": "blocking",
+      "title": "Race Condition in Cache Invalidation",
+      "description": "The invalidation method deletes the key before acquiring the lock, potentially allowing a concurrent request to read stale data.",
+      "filePath": "src/cache/manager.ts",
+      "lineNumber": 45,
+      "suggestion": "Acquire the distributed lock before deleting the key: \`await this.lock.acquire(); await this.redis.del(key);\`"
+    },
+    {
+      "severity": "medium",
+      "title": "Missing Error Boundary",
+      "description": "If the Redis connection drops, the fallback logic is completely bypassed resulting in an unhandled promise rejection.",
+      "filePath": "src/cache/manager.ts",
+      "lineNumber": 82,
+      "suggestion": "Wrap the Redis call in a try/catch and fallback to DB query: \`try { return await this.redis.get(key); } catch (e) { return this.db.fetch(key); }\`"
+    }
+  ]
+}
+</example_flawed_implementation>
+
+<example_approved>
+{
+  "summary": "Clean implementation of the user profile endpoint. A minor performance optimization can be made.",
+  "overallVerdict": "approved",
+  "issues": [
+    {
+      "severity": "suggestion",
+      "title": "N+1 Query Optimization",
+      "description": "Fetching roles inside the loop will cause N+1 database queries when processing large arrays.",
+      "filePath": "src/api/users.ts",
+      "lineNumber": 112,
+      "suggestion": "Use a DataLoader or bulk fetch the roles before mapping over the users."
+    }
+  ]
+}
+</example_approved>
+</examples>
+</system_instructions>`;
+
+      const systemAlpaca = `### Instruction:
+You are an elite Senior AI Prompt Engineer and L6+ Staff Engineer at Google.
+Your role is to review a Pull Request diff against the provided PRD, Tasks, and Repository Context.
+
+### Rules:
+1. **Strictly Professional**: Do NOT use emojis. Do NOT use filler words. Do NOT generate boilerplate text.
+2. **High Signal Only**: Every line you write must carry high signal and tangible value. Avoid generic praises.
+3. **Be Precise**: Look for architectural correctness, security flaws, performance bottlenecks, and strict alignment with the PRD.
+4. **Actionable Suggestions**: When describing an issue, the suggestion must be an exact technical solution or code fix.
+
+### Output Format:
+Output a JSON object exactly matching this structure (no markdown wrapper):
+{
+  "summary": "Concise, high-signal summary of the review",
+  "overallVerdict": "approved" | "changes_required" | "needs_discussion",
+  "issues": [
+    {
+      "severity": "blocking" | "high" | "medium" | "low" | "suggestion",
+      "title": "Clear, technical issue title",
+      "description": "Precise explanation of the flaw and why it matters",
+      "filePath": "path/to/file",
+      "lineNumber": 123 (approximate line number within the file, MUST be a number or null),
+      "suggestion": "Exact technical solution or code fix"
+    }
+  ]
+}
+If there are no major issues, output "approved" for overallVerdict.
+
+### Example Outputs:
+
+**Example 1: Flawed Implementation (changes_required)**
+{
+  "summary": "The PR implements the caching layer, but introduces a race condition and lacks proper error handling for the Redis client.",
+  "overallVerdict": "changes_required",
+  "issues": [
+    {
+      "severity": "blocking",
+      "title": "Race Condition in Cache Invalidation",
+      "description": "The invalidation method deletes the key before acquiring the lock, potentially allowing a concurrent request to read stale data.",
+      "filePath": "src/cache/manager.ts",
+      "lineNumber": 45,
+      "suggestion": "Acquire the distributed lock before deleting the key: \`await this.lock.acquire(); await this.redis.del(key);\`"
+    },
+    {
+      "severity": "medium",
+      "title": "Missing Error Boundary",
+      "description": "If the Redis connection drops, the fallback logic is completely bypassed resulting in an unhandled promise rejection.",
+      "filePath": "src/cache/manager.ts",
+      "lineNumber": 82,
+      "suggestion": "Wrap the Redis call in a try/catch and fallback to DB query: \`try { return await this.redis.get(key); } catch (e) { return this.db.fetch(key); }\`"
+    }
+  ]
+}
+
+**Example 2: Minor Nits (approved)**
+{
+  "summary": "Clean implementation of the user profile endpoint. A minor performance optimization can be made.",
+  "overallVerdict": "approved",
+  "issues": [
+    {
+      "severity": "suggestion",
+      "title": "N+1 Query Optimization",
+      "description": "Fetching roles inside the loop will cause N+1 database queries when processing large arrays.",
+      "filePath": "src/api/users.ts",
+      "lineNumber": 112,
+      "suggestion": "Use a DataLoader or bulk fetch the roles before mapping over the users."
+    }
+  ]
+}
+`;
+
+      const promptOpenLM = `<input>
+Review the following Pull Request.
+</input>
+
+<context>
+<prd>
+${contextData.prdContent || "No PRD provided"}
+</prd>
+
+<tasks>
+${JSON.stringify(contextData.tasksList.map(t => t.title)) || "No tasks provided"}
+</tasks>
+
+<repository_context>
+${repoContextStr || "No related context found"}
+</repository_context>
+
+<pull_request_diff>
+${diffStr.slice(0, 80000)}
+</pull_request_diff>
+</context>`;
+
+      const promptAlpaca = `### Input:
 Review the following Pull Request.
 
+### Context:
 === PRD ===
 ${contextData.prdContent || "No PRD provided"}
 
@@ -140,8 +303,15 @@ ${JSON.stringify(contextData.tasksList.map(t => t.title)) || "No tasks provided"
 ${repoContextStr || "No related context found"}
 
 === PULL REQUEST DIFF ===
-${diffStr.slice(0, 80000)} // truncate to avoid token limits
-        `,
+${diffStr.slice(0, 80000)}
+
+### Response:
+`;
+
+      const response = await generateText({
+        model: getReviewModel(isPaid ? "pro" : "free"),
+        system: isPaid ? systemOpenLM : systemAlpaca,
+        prompt: isPaid ? promptOpenLM : promptAlpaca,
       });
 
       try {
@@ -257,6 +427,29 @@ ${diffStr.slice(0, 80000)} // truncate to avoid token limits
       });
       if (latestReview) {
         await db.update(reviews).set({ postedToGithub: true }).where(eq(reviews.id, latestReview.id));
+      }
+
+      // Emit event to update UI in real-time
+      if (prInfo.featureRequestId) {
+        // Also update feature status
+        const newFeatureStatus = reviewOutput.overallVerdict === "approved" ? "shipped" : "review";
+        await db.update(featureRequests)
+          .set({ status: newFeatureStatus })
+          .where(eq(featureRequests.id, prInfo.featureRequestId));
+
+        const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
+        try {
+          await fetch(`${API_BASE_URL}/api/internal/emit`, {
+            method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
+            body: JSON.stringify({ 
+              event: "featureUpdated", 
+              featureId: prInfo.featureRequestId, 
+              data: { status: newFeatureStatus } 
+            })
+          });
+        } catch (e) {
+          console.warn("Failed to emit featureUpdated socket event:", e);
+        }
       }
     });
 

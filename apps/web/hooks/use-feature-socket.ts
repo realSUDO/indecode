@@ -39,11 +39,23 @@ export function useFeatureSocket(featureId: string) {
       utils.task.listByFeature.setData(
         { featureRequestId: featureIdRef.current },
         (oldData) => {
-          if (!oldData) return oldData;
+          if (!oldData || oldData.length === 0) {
+            // If the cache is empty, we must fetch to get the full list
+            utils.task.listByFeature.invalidate({ featureRequestId: featureIdRef.current });
+            return oldData;
+          }
           return oldData.map((t) =>
             t.id === updatedTask.id ? { ...t, status: updatedTask.status } : t
           );
         }
+      );
+    };
+
+    const handleTasksGenerated = (tasks: any[]) => {
+      // Instantly populate the task list
+      utils.task.listByFeature.setData(
+        { featureRequestId: featureIdRef.current },
+        tasks
       );
     };
 
@@ -69,10 +81,12 @@ export function useFeatureSocket(featureId: string) {
     };
 
     sock.on("taskUpdated", handleTaskUpdated);
+    sock.on("tasksGenerated", handleTasksGenerated);
     sock.on("featureUpdated", handleFeatureUpdated);
 
     return () => {
       sock.off("taskUpdated", handleTaskUpdated);
+      sock.off("tasksGenerated", handleTasksGenerated);
       sock.off("featureUpdated", handleFeatureUpdated);
       sock.emit("leaveFeature", featureId);
     };

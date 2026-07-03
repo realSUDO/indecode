@@ -1,6 +1,6 @@
 import { inngest } from "../client";
 import { db } from "@repo/database";
-import { discoverySessions, discoveryMessages, featureRequests, prds } from "@repo/database/schema";
+import { discoverySessions, discoveryMessages, featureRequests, prds, projects, users } from "@repo/database/schema";
 import { eq, asc } from "drizzle-orm";
 import { generatePRD } from "../../ai/agents/prd";
 
@@ -24,6 +24,11 @@ export const generatePRDFunction = inngest.createFunction(
     const context = await step.run("gather-context", async () => {
       const feature = await db.query.featureRequests.findFirst({
         where: eq(featureRequests.id, featureRequestId),
+        with: {
+          project: {
+            with: { user: true }
+          }
+        }
       });
       if (!feature) throw new Error(`Feature request ${featureRequestId} not found`);
 
@@ -35,6 +40,7 @@ export const generatePRDFunction = inngest.createFunction(
       return {
         title: feature.title,
         description: feature.description,
+        plan: (feature as any).project?.user?.plan as "free" | "pro" | "enterprise" | undefined,
         messages: messages.map(m => ({ role: m.role, content: m.content })),
       };
     });
@@ -45,6 +51,7 @@ export const generatePRDFunction = inngest.createFunction(
         featureTitle: context.title,
         featureDescription: context.description,
         discoveryTranscript: context.messages,
+        plan: context.plan,
       });
     });
 
@@ -80,10 +87,12 @@ export const generatePRDFunction = inngest.createFunction(
         
       try {
         await fetch(`${API_BASE_URL}/api/internal/emit`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
           body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "prd_draft" } })
         });
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Failed to emit featureUpdated socket event:", e);
+      }
     });
 
     return { prdId: savedPRD.id };

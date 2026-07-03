@@ -30,6 +30,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar"
 import { trpc } from "~/trpc/client"
+import { authClient } from "~/lib/auth-client"
 
 export function NavUser() {
   const { isMobile, state, setOpen } = useSidebar()
@@ -46,6 +47,18 @@ export function NavUser() {
       </SidebarMenu>
     )
   }
+
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          const isDev = process.env.NODE_ENV !== "production";
+          const signInUrl = isDev ? "http://localhost:3002/sign-in" : `https://auth.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}/sign-in`;
+          window.location.href = signInUrl;
+        },
+      },
+    });
+  };
 
   return (
     <SidebarMenu>
@@ -114,7 +127,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="bg-white/10 my-1" />
-            <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer text-neutral-400 rounded-lg mx-1 transition-colors">
+            <DropdownMenuItem onClick={handleSignOut} className="focus:bg-white/10 focus:text-white cursor-pointer text-neutral-400 rounded-lg mx-1 transition-colors">
               <LogOut className="mr-2 size-4" />
               Log out
             </DropdownMenuItem>

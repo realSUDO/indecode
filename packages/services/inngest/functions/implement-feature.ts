@@ -3,7 +3,7 @@ import { db } from "@repo/database";
 import { featureRequests, prds, tasks, codebaseEmbeddings, pullRequests } from "@repo/database/schema";
 import { eq, sql } from "drizzle-orm";
 import { embedCode } from "../../ai/embeddings";
-import { getPlanningModel } from "../../ai/index";
+import { getPlanningModel, getImplementationModel } from "../../ai/index";
 import { generateText } from "ai";
 import { getInstallationOctokit } from "../../github/index";
 
@@ -13,6 +13,7 @@ export const implementFeatureFunction = inngest.createFunction(
   { 
     id: "implement-feature", 
     name: "Implement Feature with AI",
+    retries: 3,
     triggers: [{ event: "feature/implement" }]
   },
   async ({ event, step }: any) => {
@@ -49,6 +50,8 @@ export const implementFeatureFunction = inngest.createFunction(
 
     const repo = data.feature.project?.repositories[0];
     if (!repo) throw new Error("No repository connected to this project.");
+
+    const userPlan = (data.feature as any).project?.user?.plan as "free" | "pro" | "enterprise" | undefined;
 
     const branchName = `feature/indecode-${featureRequestId.slice(0, 8)}`;
     const [owner, name] = repo.fullName.split("/");
@@ -116,10 +119,12 @@ export const implementFeatureFunction = inngest.createFunction(
           await db.update(tasks).set({ status: "in_progress" }).where(eq(tasks.id, task.id));
           try {
             await fetch(`${API_BASE_URL}/api/internal/emit`, {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
               body: JSON.stringify({ event: "taskUpdated", featureId: featureRequestId, data: { id: task.id, status: "in_progress" } })
             });
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Failed to emit taskUpdated socket event:", e);
+          }
         });
 
         // Generate changes for THIS SPECIFIC TASK
@@ -132,45 +137,89 @@ export const implementFeatureFunction = inngest.createFunction(
               data.pr.reviews[0].issues.map((i: any) => `- ${i.title}: ${i.description} (File: ${i.filePath || 'N/A'})`).join("\n");
           }
 
-          const prompt = `You are acting as the Lead Engineer, Staff Software Architect (Amazon L6+/L7), and Technical Lead responsible for implementing features on an active Pull Request.
+          const isPaid = userPlan === "pro" || userPlan === "enterprise";
 
-Your responsibility is to write production-ready, complete code for a SINGLE task.
-CRITICAL RULES:
-1. Never restart implementation. Always build on the existing branch context.
-2. Never abandon the current branch.
-3. Every implementation should be an incremental improvement toward a merge-ready Pull Request.
-4. Do NOT leave things halfway. Do NOT use placeholders like "TODO" or "insert code here".
-5. Write the full, working implementation for the requested task.
-6. Fix any bugs in the codebase related to the feature.
+          const systemOpenLM = `<system_instructions>
+You are the Lead Engineer, Staff Software Architect (L6+), implementing features on an active Pull Request.
 
-Feature: ${data.feature.title}
+<rules>
+1. NEVER restart implementation. Always build on the existing branch context.
+2. NEVER abandon the current branch.
+3. Write the FULL, working implementation. No TODOs, no placeholders.
+4. Fix any bugs in the codebase related to the feature.
+5. Every implementation must be incremental and merge-ready.
+</rules>
+
+<output_format>
+First output a think block to analyze requirements, then an analyze block to plan file modifications, then the JSON file changes.
+
+<think>Your analysis here</think>
+<analyze>Your step-by-step plan here</analyze>
+\`\`\`json
+[ { "path": "path/to/file", "content": "entire new file content" } ]
+\`\`\`
+</output_format>
+</system_instructions>`;
+
+          const systemAlpaca = `### Instruction:
+You are the Lead Engineer, Staff Software Architect (L6+), implementing features on an active Pull Request.
+
+### Rules:
+1. NEVER restart implementation. Always build on the existing branch context.
+2. NEVER abandon the current branch.
+3. Write the FULL, working implementation. No TODOs, no placeholders.
+4. Fix any bugs in the codebase related to the feature.
+5. Every implementation must be incremental and merge-ready.
+
+### Output Format:
+First output a think block to analyze requirements, then an analyze block to plan file modifications, then the JSON file changes.
+
+<think>Your analysis here</think>
+<analyze>Your step-by-step plan here</analyze>
+\`\`\`json
+[ { "path": "path/to/file", "content": "entire new file content" } ]
+\`\`\`
+
+### Response:`;
+
+          const promptContext = isPaid
+            ? `<input>
+<feature>${data.feature.title}</feature>
+<prd>${data.prd?.content || "N/A"}</prd>
+<task priority="${task.priority}">${task.title}: ${task.description || "N/A"}</task>
+${reviewIssuesStr ? `<review_issues>${reviewIssuesStr}</review_issues>` : ""}
+<existing_code>${contextStr}</existing_code>
+</input>`
+            : `Feature: ${data.feature.title}
 PRD: ${data.prd?.content || "N/A"}
 
 Current Task to implement:
 - [${task.priority}] ${task.title}
   Description: ${task.description || "N/A"}
-
 ${reviewIssuesStr}
 
 Relevant existing code (Current Branch State):
-${contextStr}
+${contextStr}`;
 
-Respond ONLY with a JSON array of file changes that represent the next logical commit. Format:
-[
-  { "path": "path/to/file", "content": "entire new file content" }
-]`;
-
-          const result = await generateText({ model: getPlanningModel(), prompt });
-          try {
-            let jsonStr = result.text.trim();
-            const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
-            if (jsonMatch) jsonStr = jsonMatch[0];
-            else jsonStr = jsonStr.replace(/```json|```/g, "").trim();
-            return JSON.parse(jsonStr) as { path: string, content: string }[];
-          } catch (e) {
-            console.error("Failed to parse file changes JSON:", result.text);
-            return [];
+          let fileChanges: { path: string, content: string }[] = [];
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              const result = await generateText({ model: getImplementationModel(userPlan), system: isPaid ? systemOpenLM : systemAlpaca, prompt: promptContext });
+              let jsonStr = result.text;
+              const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+              if (jsonMatch) {
+                jsonStr = jsonMatch[0];
+              } else {
+                jsonStr = jsonStr.replace(/```json|```/g, "").trim();
+              }
+              fileChanges = JSON.parse(jsonStr);
+              break; // Success
+            } catch (e) {
+              console.warn(`Attempt ${attempt} failed to parse AI JSON output:`, e);
+              if (attempt === 3) return [];
+            }
           }
+          return fileChanges;
         });
 
         // Apply changes to GitHub and local context
@@ -180,12 +229,13 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
             
             // Check branch again inside the loop to get latest sha
             let currentSha = branchState.sha;
+            let branchExists = branchState.exists;
             try {
               const { data: refData } = await octokit.rest.git.getRef({ owner, repo: name, ref: `heads/${branchName}` });
               currentSha = refData.object.sha;
-              branchState.exists = true;
+              branchExists = true;
             } catch (err: any) {
-              if (err.status === 404 && !branchState.exists) {
+              if (err.status === 404 && !branchExists) {
                  await octokit.rest.git.createRef({ owner, repo: name, ref: `refs/heads/${branchName}`, sha: branchState.sha });
               }
             }
@@ -200,15 +250,6 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
             const { data: newCommit } = await octokit.rest.git.createCommit({ owner, repo: name, message: commitMessage, tree: newTree.sha, parents: [currentSha] });
 
             await octokit.rest.git.updateRef({ owner, repo: name, ref: `heads/${branchName}`, sha: newCommit.sha, force: false });
-
-            if (!branchState.exists) {
-              try {
-                await octokit.rest.pulls.create({
-                  owner, repo: name, title: `Implement: ${data.feature.title}`, head: branchName, base: repo.defaultBranch || "main",
-                  body: `Automated PR by Indecode AI implementation agent.\n\nPRD attached for feature: ${data.feature.title}`,
-                });
-              } catch (err: any) { if (err.status !== 422) throw err; }
-            }
 
             // Update local context string for next task
             for (const change of fileChanges) {
@@ -227,23 +268,49 @@ Respond ONLY with a JSON array of file changes that represent the next logical c
           await db.update(tasks).set({ status: "done" }).where(eq(tasks.id, task.id));
           try {
             await fetch(`${API_BASE_URL}/api/internal/emit`, {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
               body: JSON.stringify({ event: "taskUpdated", featureId: featureRequestId, data: { id: task.id, status: "done" } })
             });
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Failed to emit taskUpdated socket event:", e);
+          }
         });
       }
     }
+
+    // 4. Create the Pull Request exactly ONCE after all tasks are committed
+    await step.run("create-pr", async () => {
+      // Only create PR if branch has commits (branchState.sha would be updated if commits were made)
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+      let branchHasCommits = false;
+      try {
+        await octokit.rest.git.getRef({ owner, repo: name, ref: `heads/${branchName}` });
+        branchHasCommits = true;
+      } catch { /* branch doesn't exist */ }
+
+      if (branchHasCommits) {
+        try {
+          await octokit.rest.pulls.create({
+            owner, repo: name, title: `Implement: ${data.feature.title}`, head: branchName, base: repo.defaultBranch || "main",
+            body: `Automated PR by Indecode AI implementation agent.\n\nPRD attached for feature: ${data.feature.title}`,
+          });
+        } catch (err: any) {
+          if (err.status !== 422) throw err; // 422 = PR already exists
+        }
+      }
+    });
 
     // 5. Update Status to Review
     await step.run("update-feature-status", async () => {
       await db.update(featureRequests).set({ status: "review" }).where(eq(featureRequests.id, featureRequestId));
       try {
         await fetch(`${API_BASE_URL}/api/internal/emit`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_SECRET || "" },
           body: JSON.stringify({ event: "featureUpdated", featureId: featureRequestId, data: { status: "review" } })
         });
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Failed to emit featureUpdated socket event:", e);
+      }
     });
 
     return { success: true };

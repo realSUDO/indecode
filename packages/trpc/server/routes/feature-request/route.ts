@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { featureRequests, users } from "@repo/database/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { inngest } from "@repo/services/inngest";
 import { TRPCError } from "@trpc/server";
 import { hasProjectAccess } from "../../utils/auth";
@@ -59,23 +59,16 @@ export const featureRequestRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "No access to this project" });
       }
 
-      const conditions = [eq(featureRequests.projectId, input.projectId)];
-      if (input.status) {
-        conditions.push(eq(featureRequests.status, input.status));
-      }
-
       const results = await db.select()
         .from(featureRequests)
-        .where(conditions.length === 1 ? conditions[0] : undefined)
+        .where(
+          input.status
+            ? and(eq(featureRequests.projectId, input.projectId), eq(featureRequests.status, input.status))
+            : eq(featureRequests.projectId, input.projectId)
+        )
         .orderBy(desc(featureRequests.createdAt));
 
-      const filtered = results.filter(r => {
-        if (r.projectId !== input.projectId) return false;
-        if (input.status && r.status !== input.status) return false;
-        return true;
-      });
-
-      return filtered.map(f => ({
+      return results.map(f => ({
         id: f.id,
         title: f.title,
         description: f.description,

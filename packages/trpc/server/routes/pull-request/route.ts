@@ -38,7 +38,8 @@ export const pullRequestRouter = router({
         status: pr.status,
         repoFullName: pr.repository.fullName,
         latestReviewVerdict: pr.reviews.length > 0 ? pr.reviews[0]!.overallVerdict : null,
-        createdAt: pr.createdAt
+        createdAt: pr.createdAt,
+        isIndecode: pr.featureRequestId !== null
       }));
     }),
 
@@ -111,5 +112,31 @@ export const pullRequestRouter = router({
       }
 
       return { success: true };
+    }),
+
+  getDiff: protectedProcedure
+    .input(z.object({ pullRequestId: z.string() }))
+    .query(async ({ input }) => {
+      const { getInstallationOctokit } = require("@repo/services/github");
+      
+      const pr = await db.query.pullRequests.findFirst({
+        where: eq(pullRequests.id, input.pullRequestId),
+        with: { repository: true }
+      });
+      if (!pr) throw new Error("PR not found");
+
+      const octokit = await getInstallationOctokit(pr.installationId);
+      const [owner, repo] = pr.repository.fullName.split("/");
+
+      const response = await octokit.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: pr.prNumber,
+        mediaType: {
+          format: "diff"
+        }
+      });
+
+      return { diff: response.data as unknown as string };
     }),
 });

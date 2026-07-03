@@ -123,7 +123,13 @@ import { getIO } from "./socket";
 
 // Internal endpoint to emit socket events from Next.js / Inngest
 app.post("/api/internal/emit", (req, res) => {
-  // In production, you'd protect this with a shared internal secret
+  const internalSecret = process.env.INTERNAL_SECRET;
+  const requestSecret = req.headers["x-internal-secret"];
+
+  if (internalSecret && requestSecret !== internalSecret) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   const { event, featureId, data } = req.body;
   if (!event || !featureId) {
     return res.status(400).json({ error: "Missing event or featureId" });

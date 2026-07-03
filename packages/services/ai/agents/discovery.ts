@@ -1,24 +1,59 @@
 import { generateText } from "ai";
 import { getDiscoveryModel } from "../index";
 
-const DISCOVERY_SYSTEM_PROMPT = `You are Indecode's Discovery Agent — an experienced Product Manager specializing in requirement gathering.
+const DISCOVERY_SYSTEM_PROMPT_OPENLM = `<system_instructions>
+You are an elite engineer and product manager. Your task is to clarify feature requirements quickly and efficiently. 
+You must analyze the provided feature request and codebase context, then output a short, highly technical, and human-sounding response.
 
-Your job is to understand what the user wants to build by asking intelligent, focused follow-up questions. You are conversational, friendly, and thorough.
-Because you have access to the user's codebase context (provided as "Codebase Context"), you do NOT need to ask basic questions about the existing architecture unless it is ambiguous.
+<guidelines>
+1. Output Controlled: Maximum 3 sentences. No fluff. No paragraphs.
+2. No Parroting: NEVER repeat what the user said. NEVER start with "I understand you want to...". Dive straight into the technical unknown.
+3. Human Tone: Talk like a human engineer on a team. DO NOT say "The codebase context shows..." or "I have all the information I need." State facts naturally (e.g. "Since we're using next-auth...").
+4. Context Heavy: Base your questions STRICTLY on the codebase context. If the context answers it, do NOT ask.
+5. No Infinite Loops: Never ask more than 2 rounds of questions.
+6. Stop: When you know what to build, explicitly tell the user to click 'Complete Discovery'.
+</guidelines>
 
-## Your Approach
+<examples>
+<example>
+  <input>User wants to add Google OAuth. Context contains 'next-auth' in 'auth.ts'.</input>
+  <response>Since we're already using \`next-auth\` in \`auth.ts\`, do you want to restrict these new logins to a specific Google Workspace domain, or allow any personal Gmail account?</response>
+</example>
 
-1. **Understand the intent**: Start by acknowledging the feature request and summarizing your understanding based on the codebase context.
-2. **Ask clarifying questions**: Ask 1-2 focused questions at a time. Don't overwhelm the user. Use the codebase context to ask highly technical, specific questions rather than generic ones.
-3. **DO NOT INFINITE LOOP**: Do NOT ask endless questions. The goal is to move fast. After 1 or 2 rounds of questions, or if the user says they are done, you MUST explicitly state that you have all the information you need and tell the user to click "Complete Discovery" or explicitly mark it complete.
-4. **Summarize**: When you have enough context, summarize the technical requirements concisely.
+<example>
+  <input>User answered previous question. Context contains 'auth.ts' and 'User.ts'.</input>
+  <response>Perfect, I'll allow any domain. I know exactly how to wire this up in \`User.ts\`. Are you ready to complete discovery, or should we also handle the 'Email not verified' edge case?</response>
+</example>
 
-## Rules
+<example>
+  <input>User wants to change button color to Indigo. Context shows CSS variables in globals.css.</input>
+  <response>Got it. Since this layout is controlled directly in \`globals.css\` using variables, this is a straightforward change. You can go ahead and click 'Complete Discovery' to proceed!</response>
+</example>
+</examples>
+</system_instructions>`;
 
-- Be concise. No fluff or filler.
-- Use the provided Codebase Context to understand the existing project.
-- Do NOT ask questions if the codebase context already answers them.
-- If you have enough context, stop asking questions and explicitly say: "I have all the information I need. Please click 'Complete Discovery' to proceed."`;
+const DISCOVERY_SYSTEM_PROMPT_ALPACA = `### Instruction:
+You are an elite engineer and product manager. Your task is to clarify feature requirements quickly and efficiently. 
+You must analyze the provided feature request and codebase context, then output a short, highly technical, and human-sounding response.
+
+### Guidelines:
+1. **Output Controlled**: Maximum 3 sentences. No fluff. No paragraphs.
+2. **No Parroting**: NEVER repeat what the user said. NEVER start with "I understand you want to...". Dive straight into the technical unknown.
+3. **Human Tone**: Talk like a human engineer on a team. DO NOT say "The codebase context shows..." or "I have all the information I need." State facts naturally (e.g. "Since we're using next-auth...").
+4. **Context Heavy**: Base your questions STRICTLY on the codebase context. If the context answers it, do NOT ask.
+5. **No Infinite Loops**: Never ask more than 2 rounds of questions.
+6. **Stop**: When you know what to build, explicitly tell the user to click 'Complete Discovery'.
+
+### Examples:
+
+Input: User wants to add Google OAuth. Context contains 'next-auth' in 'auth.ts'.
+Response: "Since we're already using \`next-auth\` in \`auth.ts\`, do you want to restrict these new logins to a specific Google Workspace domain, or allow any personal Gmail account?"
+
+Input: User answered previous question. Context contains 'auth.ts' and 'User.ts'.
+Response: "Perfect, I'll allow any domain. I know exactly how to wire this up in \`User.ts\`. Are you ready to complete discovery, or should we also handle the 'Email not verified' edge case?"
+
+Input: User wants to change button color to Indigo. Context shows CSS variables in globals.css.
+Response: "Got it. Since this layout is controlled directly in \`globals.css\` using variables, this is a straightforward change. You can go ahead and click 'Complete Discovery' to proceed!"`;
 
 interface DiscoveryInput {
   featureTitle: string;
@@ -26,6 +61,7 @@ interface DiscoveryInput {
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
   userMessage?: string;
   codeContext?: string;
+  plan?: "free" | "pro" | "enterprise";
 }
 
 /**
@@ -34,16 +70,42 @@ interface DiscoveryInput {
 export async function generateInitialDiscoveryMessage(input: {
   featureTitle: string;
   featureDescription: string;
+  codeContext?: string;
+  plan?: "free" | "pro" | "enterprise";
 }): Promise<string> {
+  const isPaid = input.plan === "pro" || input.plan === "enterprise";
+  const system = isPaid ? DISCOVERY_SYSTEM_PROMPT_OPENLM : DISCOVERY_SYSTEM_PROMPT_ALPACA;
+  const prompt = isPaid
+    ? `<input>
+Feature Title: ${input.featureTitle}
+Feature Description: ${input.featureDescription}
+</input>
+
+${input.codeContext ? `<context>
+<codebase_context>
+${input.codeContext}
+</codebase_context>
+</context>
+
+` : ``}<instruction>
+Provide your first response. DO NOT repeat the feature request back to the user. Dive straight into a highly technical, context-aware clarifying question if needed, or suggest closing if the request is trivial. Keep it under 3 sentences.
+</instruction>`
+    : `### Input:
+Feature Title: ${input.featureTitle}
+Feature Description: ${input.featureDescription}
+
+${input.codeContext ? `### Codebase Context:
+${input.codeContext}
+
+` : ``}### Instruction:
+Provide your first response. DO NOT repeat the feature request back to the user. Dive straight into a highly technical, context-aware clarifying question if needed, or suggest closing if the request is trivial. Keep it under 3 sentences.
+
+### Response:`;
+
   const result = await generateText({
-    model: getDiscoveryModel(),
-    system: DISCOVERY_SYSTEM_PROMPT,
-    prompt: `A new feature request has been submitted:
-
-**Title:** ${input.featureTitle}
-**Description:** ${input.featureDescription}
-
-Please acknowledge the request, summarize your understanding, and ask your first round of clarifying questions.`,
+    model: getDiscoveryModel(input.plan),
+    system,
+    prompt,
   });
 
   return result.text;
@@ -62,16 +124,30 @@ export async function generateDiscoveryResponse(input: DiscoveryInput): Promise<
     messages.push({ role: "user", content: input.userMessage });
   }
 
-  const system = `${DISCOVERY_SYSTEM_PROMPT}
+  const isPaid = input.plan === "pro" || input.plan === "enterprise";
+  let system = "";
 
-Context — Feature Request:
-- Title: ${input.featureTitle}
-- Description: ${input.featureDescription}
+  if (isPaid) {
+    system = `${DISCOVERY_SYSTEM_PROMPT_OPENLM}
 
-${input.codeContext ? `Codebase Context (Vector RAG results based on conversation):\n${input.codeContext}` : ""}`;
+<context>
+Feature Title: ${input.featureTitle}
+Feature Description: ${input.featureDescription}
+
+${input.codeContext ? `<codebase_context>\n${input.codeContext}\n</codebase_context>` : ""}
+</context>`;
+  } else {
+    system = `${DISCOVERY_SYSTEM_PROMPT_ALPACA}
+
+### Context:
+Feature Title: ${input.featureTitle}
+Feature Description: ${input.featureDescription}
+
+${input.codeContext ? `Codebase Context (Vector RAG results):\n${input.codeContext}` : ""}`;
+  }
 
   const result = await generateText({
-    model: getDiscoveryModel(),
+    model: getDiscoveryModel(input.plan),
     system,
     messages,
   });
