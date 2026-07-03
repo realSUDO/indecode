@@ -1,3 +1,5 @@
+"use client";
+
 import { useParams } from "next/navigation";
 import { trpc } from "~/trpc/client";
 import { Badge } from "~/components/ui/badge";
