@@ -70,7 +70,7 @@ export default function NewFeaturePage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={createFeature.isPending}
-              className="h-12 bg-white/5 border-white/10 text-white placeholder:text-neutral-600 focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-xl"
+              className="h-12 bg-white/5 border-white/10 text-white placeholder:text-neutral-600 focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:border-white/30 rounded-xl"
             />
           </div>
 
@@ -83,7 +83,7 @@ export default function NewFeaturePage() {
               onChange={(e) => setDescription(e.target.value)}
               rows={8}
               disabled={createFeature.isPending}
-              className="bg-white/5 border-white/10 text-white placeholder:text-neutral-600 focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-xl resize-none py-3"
+              className="bg-white/5 border-white/10 text-white placeholder:text-neutral-600 focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:border-white/30 rounded-xl resize-none py-3"
             />
           </div>
 
@@ -91,7 +91,7 @@ export default function NewFeaturePage() {
             <Button 
               type="submit" 
               disabled={createFeature.isPending}
-              className="h-11 px-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] font-medium"
+              className="h-11 px-8 bg-white hover:bg-zinc-200 text-black rounded-xl transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] font-medium"
             >
               {createFeature.isPending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
