@@ -26,7 +26,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 // Old PIPELINE_TABS removed in favor of ExecutionTimeline
 
-import { useFeatureSocket } from "~/hooks/use-feature-socket";
 
 function getNextAction(status: string | undefined, projectId: string, featureId: string, router: any, prdReady: boolean) {
   if (status === "submitted" || status === "discovery") {
@@ -55,7 +54,6 @@ export default function FeatureDetailPage() {
   const featureId = params.featureId as string;
   const utils = trpc.useUtils();
 
-  useFeatureSocket(featureId);
 
   const { data: feature, isLoading } = trpc.featureRequest.getById.useQuery(
     { featureRequestId: featureId },

@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
-import { useFeatureSocket } from "~/hooks/use-feature-socket";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Circle, PlayCircle, Loader2 } from "lucide-react";
 
@@ -23,7 +22,6 @@ export default function TasksPage() {
   const projectId = params.projectId as string;
   const utils = trpc.useUtils();
 
-  useFeatureSocket(featureId);
 
   const { data: feature } = trpc.featureRequest.getById.useQuery(
     { featureRequestId: featureId },
