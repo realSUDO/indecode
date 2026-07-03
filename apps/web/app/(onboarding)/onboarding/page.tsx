@@ -45,6 +45,8 @@ export default function OnboardingPage() {
     }
   }, []);
 
+  const utils = trpc.useUtils();
+
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) {
@@ -58,6 +60,7 @@ export default function OnboardingPage() {
         company,
         onboardingRole: role,
       });
+      await utils.auth.getSession.invalidate();
       setStep(2);
     } catch (err: any) {
       toast.error(err.message || "Failed to update profile");

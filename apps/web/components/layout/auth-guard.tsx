@@ -27,6 +27,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Set cookie for marketing page
+      const domain = process.env.NODE_ENV === "production" ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN || "indecode.in"}` : "localhost";
+      document.cookie = `indecode-logged-in=true; domain=${domain}; path=/; max-age=31536000`;
+
       // Check onboarding
       if (session.user && !(session.user as any).onboardingCompleted) {
         if (!pathname?.startsWith("/onboarding")) {
@@ -51,6 +55,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!session?.user) {
     return null; // Will redirect via useEffect
+  }
+
+  // Prevent flicker before redirecting to onboarding
+  if (!(session.user as any).onboardingCompleted && !pathname?.startsWith("/onboarding")) {
+    return null; // Wait for useEffect router.push
   }
 
   return <>{children}</>;
