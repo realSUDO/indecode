@@ -3,7 +3,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "~/trpc/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Circle, PlayCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, PlayCircle, Loader2, Clipboard, Check, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type Task = {
   id: string;
@@ -21,7 +23,7 @@ export default function TasksPage() {
   const featureId = params.featureId as string;
   const projectId = params.projectId as string;
   const utils = trpc.useUtils();
-
+  const [copied, setCopied] = useState(false);
 
   const { data: feature } = trpc.featureRequest.getById.useQuery(
     { featureRequestId: featureId },
@@ -33,7 +35,7 @@ export default function TasksPage() {
       }
     }
   );
-  
+
   const isGenerating = feature?.status === "planning";
   const isImplementing = feature?.status === "implementing";
 
@@ -44,13 +46,67 @@ export default function TasksPage() {
     }
   );
 
+  const { data: prd } = trpc.prd.getByFeature.useQuery(
+    { featureRequestId: featureId },
+    { enabled: feature?.status === "in_progress" }
+  );
+
   const implementMutation = trpc.featureRequest.triggerImplementation.useMutation({
     onSuccess: () => {
-      // Immediately redirect to the timeline view so user sees live progress
       utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
       router.push(`/project/${projectId}/features/${featureId}`);
     },
   });
+
+  const skipToReviewMutation = trpc.featureRequest.skipToReview.useMutation({
+    onSuccess: () => {
+      utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+      toast.success("Navigating to review — auto-discovering your PR...");
+      router.push(`/project/${projectId}/features/${featureId}/reviews`);
+    },
+    onError: (err) => toast.error(err.message || "Failed to skip to review"),
+  });
+
+  const handleCopyPrompt = () => {
+    if (!taskList || taskList.length === 0) return;
+
+    const taskLines = taskList
+      .map((t, i) => `${i + 1}. [${(t.priority || "medium").toUpperCase()}] ${t.title}${t.description ? `\n   ${t.description}` : ""}`)
+      .join("\n");
+
+    const prompt = `You are implementing a feature for an existing codebase.
+
+## Feature
+${feature?.title || ""}
+
+## Product Requirements Document (PRD)
+${prd?.content || "(PRD not available — use the task list below as your guide)"}
+
+## Engineering Tasks (implement in order)
+${taskLines}
+
+## Rules
+1. Preserve ALL existing code. Only modify what is strictly necessary.
+2. For existing files, make surgical edits — do NOT rewrite entire files.
+3. For new functionality, create new files where appropriate.
+4. No TODOs, no placeholders. Write production-ready code.
+5. Implement each task incrementally. Commit after each task.
+6. When modifying a file, show ONLY the changed lines with enough surrounding context to locate them precisely.
+7. Always make a new branch named ${feature?.title} 
+## POST FEATURE STEPS
+1. Commit the changes in ${feature?.title} branch
+2. push the branch
+3. check if gh cli is installed , if yes then run 'gh pr create --title "${feature?.title}" --body ""' on the current branch 
+4. If not , instruct user to go to the remote repository on github and create a pull request manually`;
+
+
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true);
+      toast.success("Implementation prompt copied to clipboard!");
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
 
   if (isLoading && !taskList) {
     return (
@@ -80,16 +136,15 @@ export default function TasksPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
-        className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${
-          isInProgress 
-            ? "border-white/20 bg-white/5 shadow-2xl" 
-            : isDone
+        className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${isInProgress
+          ? "border-white/20 bg-white/5 shadow-2xl"
+          : isDone
             ? "border-white/5 bg-transparent opacity-60"
             : "border-white/5 bg-[#0A0A0A]"
-        }`}
+          }`}
       >
         {isInProgress && (
-          <motion.div 
+          <motion.div
             className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent z-0"
             animate={{ opacity: [0.3, 0.6, 0.3] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -104,20 +159,19 @@ export default function TasksPage() {
               {isTodo && <Circle className="w-4 h-4 text-neutral-600" />}
             </div>
             <div>
-              <h3 className={`font-medium text-sm transition-colors duration-300 ${
-                isDone ? "text-neutral-400 line-through decoration-neutral-600" : "text-white"
-              }`}>
+              <h3 className={`font-medium text-sm transition-colors duration-300 ${isDone ? "text-neutral-400 line-through decoration-neutral-600" : "text-white"
+                }`}>
                 {task.title}
               </h3>
             </div>
           </div>
-          
+
           {task.description && (
             <p className="text-neutral-500 text-xs leading-relaxed line-clamp-3">
               {task.description}
             </p>
           )}
-          
+
           <div className="flex items-center gap-2 mt-auto pt-2">
             {task.priority && (
               <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/10 text-neutral-400 bg-white/5">
@@ -143,32 +197,85 @@ export default function TasksPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Implementation Tasks</h1>
           <p className="text-neutral-500 mt-2">{feature?.title}</p>
         </div>
-        
-        {feature?.status === "planning" && (
-          <div className="flex items-center gap-2 text-neutral-400 bg-white/5 px-4 py-2 rounded-full text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Generating tasks...
-          </div>
-        )}
 
-        {feature?.status === "in_progress" && (
-          <button 
-            onClick={() => implementMutation.mutate({ featureRequestId: featureId })}
-            disabled={implementMutation.isPending}
-            className="px-6 py-2.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-sm font-semibold transition-all duration-300 disabled:opacity-50"
-          >
-            {implementMutation.isPending ? "Starting AI Agent..." : "Implement with AI"}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {feature?.status === "planning" && (
+            <div className="flex items-center gap-2 text-neutral-400 bg-white/5 px-4 py-2 rounded-full text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating tasks...
+            </div>
+          )}
 
-        {feature?.status === "review" && (
-          <button 
-            onClick={() => router.push(`/project/${projectId}/features/${featureId}/reviews`)}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
-          >
-            Review AI Code →
-          </button>
-        )}
+          {feature?.status === "implementing" && (
+            <div className="flex items-center gap-2 text-neutral-400 bg-white/5 px-4 py-2 rounded-full text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              AI is implementing...
+            </div>
+          )}
+
+          {feature?.status === "in_progress" && taskList && taskList.length > 0 && (
+            <>
+              {/* Skip to Review — for manual implementations */}
+              <button
+                onClick={() => skipToReviewMutation.mutate({ featureRequestId: featureId })}
+                disabled={skipToReviewMutation.isPending}
+                title="Already implemented manually? Skip straight to AI code review."
+                className="px-4 py-2 text-sm text-neutral-400 hover:text-white border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+              >
+                {skipToReviewMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-3.5 h-3.5" />
+                )}
+                Skip to Review
+              </button>
+
+              {/* Copy Prompt — for users who want to implement with their own AI */}
+              <button
+                onClick={handleCopyPrompt}
+                title="Copy a ready-made implementation prompt for your own AI (Cursor, Copilot, etc.)"
+                className="px-4 py-2 text-sm text-neutral-400 hover:text-white border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 flex items-center gap-2"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Clipboard className="w-3.5 h-3.5" />
+                    Copy Prompt
+                  </>
+                )}
+              </button>
+
+              {/* Primary: Implement with AI */}
+              <button
+                onClick={() => implementMutation.mutate({ featureRequestId: featureId })}
+                disabled={implementMutation.isPending}
+                className="px-6 py-2.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-sm font-semibold transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+              >
+                {implementMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Starting AI Agent...
+                  </>
+                ) : (
+                  "⚡ Implement with AI"
+                )}
+              </button>
+            </>
+          )}
+
+          {feature?.status === "review" && (
+            <button
+              onClick={() => router.push(`/project/${projectId}/features/${featureId}/reviews`)}
+              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+            >
+              Review AI Code →
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Task Kanban */}
@@ -184,7 +291,7 @@ export default function TasksPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          
+
           {/* Todo Column */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/5">

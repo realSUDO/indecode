@@ -172,4 +172,28 @@ export const featureRequestRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Skip to review: user implemented manually, so we set status to "review"
+   * and auto-discover any open PRs on the connected GitHub repo to link.
+   */
+  skipToReview: protectedProcedure
+    .input(z.object({ featureRequestId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, input.featureRequestId),
+      });
+      if (!feature) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const hasAccess = await hasProjectAccess(feature.projectId, ctx.user.id);
+      if (!hasAccess) throw new TRPCError({ code: "FORBIDDEN" });
+
+      // Set feature to review status
+      await db.update(featureRequests)
+        .set({ status: "review" })
+        .where(eq(featureRequests.id, input.featureRequestId));
+
+      return { success: true };
+    }),
 });
+

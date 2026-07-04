@@ -55,6 +55,7 @@ export default function FeatureReviewsPage() {
   const router = useRouter();
   const projectId = params.projectId as string;
   const featureId = params.featureId as string;
+  const utils = trpc.useUtils();
 
   const { data: pr, isLoading: isPrLoading } = trpc.pullRequest.getByFeatureId.useQuery(
     { featureRequestId: featureId },
@@ -69,6 +70,18 @@ export default function FeatureReviewsPage() {
     }
   );
 
+  const { data: unlinkedPrs, isLoading: unlinkedLoading } = trpc.pullRequest.getUnlinkedPrs.useQuery(
+    { featureRequestId: featureId },
+    { enabled: !isPrLoading && !pr }
+  );
+
+  const linkMutation = trpc.pullRequest.linkToFeature.useMutation({
+    onSuccess: () => {
+      // refetch will happen automatically because pr query will invalidate or just poll
+      utils.pullRequest.getByFeatureId.invalidate({ featureRequestId: featureId });
+    }
+  });
+
   if (isPrLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-12">
@@ -82,13 +95,50 @@ export default function FeatureReviewsPage() {
 
   if (!pr) {
     return (
-      <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 text-center">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12">
+      <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 animate-in fade-in duration-500">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center max-w-2xl mx-auto">
           <svg className="w-12 h-12 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <h2 className="text-xl font-semibold text-white">No Pull Request Found</h2>
-          <p className="text-gray-400 mt-2">A pull request hasn't been opened for this feature yet.</p>
+          <h2 className="text-xl font-semibold text-white">Link your Pull Request</h2>
+          <p className="text-gray-400 mt-2 mb-8">
+            You chose to implement this manually. Which pull request belongs to this feature?
+          </p>
+
+          {unlinkedLoading ? (
+            <div className="flex justify-center p-4">
+              <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
+            </div>
+          ) : unlinkedPrs && unlinkedPrs.length > 0 ? (
+            <div className="flex flex-col gap-3 text-left">
+              {unlinkedPrs.map(up => (
+                <div key={up.number} className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                  <div>
+                    <a href={up.url} target="_blank" rel="noreferrer" className="text-white font-medium hover:underline flex items-center gap-2">
+                      #{up.number} - {up.title} <ExternalLink className="w-3 h-3 text-neutral-500" />
+                    </a>
+                    <p className="text-sm text-neutral-400 mt-1">Opened by {up.author}</p>
+                  </div>
+                  <button
+                    onClick={() => linkMutation.mutate({ featureRequestId: featureId, prNumber: up.number })}
+                    disabled={linkMutation.isPending}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {linkMutation.isPending && linkMutation.variables?.prNumber === up.number ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : "Link & Review"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+              <p className="text-neutral-300 font-medium">No open pull requests found.</p>
+              <p className="text-neutral-500 text-sm mt-1">
+                Open a PR on GitHub and it will appear here automatically.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

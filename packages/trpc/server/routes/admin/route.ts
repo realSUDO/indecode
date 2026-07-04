@@ -31,20 +31,12 @@ export const adminRouter = router({
     }),
 
   grantPro: adminProcedure
-    .input(z.object({
-      targetUserId: z.string(),
-    }))
+    .input(z.object({ targetUserId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const targetUser = await db.query.users.findFirst({
-        where: eq(users.id, input.targetUserId)
-      });
-      
+      const targetUser = await db.query.users.findFirst({ where: eq(users.id, input.targetUserId) });
       if (!targetUser) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await db.update(users).set({
-        plan: "pro",
-        subscriptionStatus: "active"
-      }).where(eq(users.id, input.targetUserId));
+      await db.update(users).set({ plan: "pro", subscriptionStatus: "active" }).where(eq(users.id, input.targetUserId));
 
       await db.insert(auditLogs).values({
         actorId: ctx.adminUser.id,
@@ -54,34 +46,33 @@ export const adminRouter = router({
       });
 
       await invalidateCache(`user:profile:${input.targetUserId}`);
-
       return { success: true };
     }),
 
   getCoupons: adminProcedure
     .query(async () => {
-      return await db.query.coupons.findMany({
-        orderBy: [desc(coupons.createdAt)]
-      });
+      return await db.query.coupons.findMany({ orderBy: [desc(coupons.createdAt)] });
     }),
 
   createCoupon: adminProcedure
     .input(z.object({
-      code: z.string(),
+      code: z.string().min(1).max(50),
       description: z.string().optional(),
       discountType: z.enum(["percentage", "fixed"]),
-      discountValue: z.number(),
-      maxUses: z.number().nullable().optional(),
-      perUserLimit: z.number().default(1),
+      discountValue: z.number().min(1),
+      maxUses: z.number().int().positive().nullable().optional(),
+      perUserLimit: z.number().int().positive().default(1),
+      expiresAt: z.string().datetime().nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const [newCoupon] = await db.insert(coupons).values({
-        code: input.code,
+        code: input.code.toUpperCase(),
         description: input.description,
         discountType: input.discountType,
         discountValue: input.discountValue,
-        maxUses: input.maxUses || null,
+        maxUses: input.maxUses ?? null,
         perUserLimit: input.perUserLimit,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
       }).returning();
 
       if (!newCoupon) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create coupon" });
@@ -93,5 +84,39 @@ export const adminRouter = router({
       });
 
       return newCoupon;
-    })
+    }),
+
+  deleteCoupon: adminProcedure
+    .input(z.object({ couponId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await db.query.coupons.findFirst({ where: eq(coupons.id, input.couponId) });
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Coupon not found" });
+
+      await db.delete(coupons).where(eq(coupons.id, input.couponId));
+      await db.insert(auditLogs).values({
+        actorId: ctx.adminUser.id,
+        action: "coupon_deleted",
+        metadata: { couponCode: existing.code }
+      });
+
+      return { success: true };
+    }),
+
+  toggleCoupon: adminProcedure
+    .input(z.object({ couponId: z.string(), isActive: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await db.update(coupons)
+        .set({ isActive: input.isActive })
+        .where(eq(coupons.id, input.couponId))
+        .returning();
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.insert(auditLogs).values({
+        actorId: ctx.adminUser.id,
+        action: input.isActive ? "coupon_activated" : "coupon_deactivated",
+        metadata: { couponCode: updated.code }
+      });
+
+      return { success: true };
+    }),
 });

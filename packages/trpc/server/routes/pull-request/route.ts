@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "../../trpc";
 import { db } from "@repo/database";
 import { pullRequests, repositories } from "@repo/database/schema";
 import { eq, desc, inArray } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 export const pullRequestRouter = router({
   listByProject: protectedProcedure
@@ -117,7 +118,7 @@ export const pullRequestRouter = router({
   getDiff: protectedProcedure
     .input(z.object({ pullRequestId: z.string() }))
     .query(async ({ input }) => {
-      const { getInstallationOctokit } = require("@repo/services/github");
+      const { getInstallationOctokit } = await import("@repo/services/github");
       
       const pr = await db.query.pullRequests.findFirst({
         where: eq(pullRequests.id, input.pullRequestId),
@@ -126,7 +127,7 @@ export const pullRequestRouter = router({
       if (!pr) throw new Error("PR not found");
 
       const octokit = await getInstallationOctokit(pr.installationId);
-      const [owner, repo] = pr.repository.fullName.split("/");
+      const [owner, repo] = pr.repository.fullName.split("/") as [string, string];
 
       const response = await octokit.rest.pulls.get({
         owner,
@@ -138,5 +139,94 @@ export const pullRequestRouter = router({
       });
 
       return { diff: response.data as unknown as string };
+    }),
+
+  getUnlinkedPrs: protectedProcedure
+    .input(z.object({ featureRequestId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const { getInstallationOctokit } = await import("@repo/services/github");
+      const { featureRequests } = await import("@repo/database/schema");
+
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, input.featureRequestId),
+        with: { project: { with: { repositories: { with: { githubInstallation: true } } } } }
+      });
+
+      if (!feature) throw new TRPCError({ code: "NOT_FOUND" });
+      const repo = feature.project?.repositories?.[0];
+      if (!repo?.githubInstallation) return [];
+
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+      const [owner, repoName] = repo.fullName.split("/") as [string, string];
+
+      // Get latest 10 open PRs
+      const { data: openPrs } = await octokit.rest.pulls.list({
+        owner, repo: repoName, state: "open", sort: "created", direction: "desc", per_page: 10
+      });
+
+      // Filter out auto-generated indecode branches
+      const candidates = openPrs.filter(pr => !pr.head.ref.startsWith("feature/indecode-")).slice(0, 3);
+      
+      return candidates.map(pr => ({
+        number: pr.number,
+        title: pr.title,
+        author: pr.user?.login,
+        url: pr.html_url,
+      }));
+    }),
+
+  linkToFeature: protectedProcedure
+    .input(z.object({ featureRequestId: z.string(), prNumber: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getInstallationOctokit } = await import("@repo/services/github");
+      const { featureRequests } = await import("@repo/database/schema");
+      const { inngest: inngestClient } = await import("@repo/services/inngest");
+      const { and } = await import("drizzle-orm");
+
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, input.featureRequestId),
+        with: { project: { with: { repositories: { with: { githubInstallation: true } } } } }
+      });
+      if (!feature) throw new TRPCError({ code: "NOT_FOUND" });
+      const repo = feature.project?.repositories?.[0];
+      if (!repo?.githubInstallation) throw new TRPCError({ code: "BAD_REQUEST", message: "No repo linked" });
+
+      const octokit = await getInstallationOctokit(repo.githubInstallation.installationId);
+      const [owner, repoName] = repo.fullName.split("/") as [string, string];
+
+      const { data: ghPr } = await octokit.rest.pulls.get({
+        owner, repo: repoName, pull_number: input.prNumber
+      });
+
+      let prId: string;
+      const existingDbPr = await db.query.pullRequests.findFirst({
+        where: and(
+          eq(pullRequests.repositoryId, repo.id),
+          eq(pullRequests.prNumber, input.prNumber)
+        )
+      });
+
+      if (existingDbPr) {
+        await db.update(pullRequests)
+          .set({ featureRequestId: input.featureRequestId, status: "pending" })
+          .where(eq(pullRequests.id, existingDbPr.id));
+        prId = existingDbPr.id;
+      } else {
+        const [newPr] = await db.insert(pullRequests).values({
+          repositoryId: repo.id,
+          installationId: repo.githubInstallation.installationId,
+          prNumber: ghPr.number,
+          title: ghPr.title,
+          authorLogin: ghPr.user?.login || "unknown",
+          headSha: ghPr.head.sha,
+          baseBranch: ghPr.base.ref,
+          status: "pending",
+          featureRequestId: input.featureRequestId,
+        }).returning();
+        prId = newPr!.id;
+      }
+
+      await inngestClient.send({ name: "github/pr.received", data: { pullRequestId: prId } });
+      return { success: true };
     }),
 });
