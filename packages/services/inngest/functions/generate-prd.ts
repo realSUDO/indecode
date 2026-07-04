@@ -1,7 +1,7 @@
 import { inngest } from "../client";
 import { db } from "@repo/database";
 import { discoverySessions, discoveryMessages, featureRequests, prds, projects, users } from "@repo/database/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, sql } from "drizzle-orm";
 import { generatePRD } from "../../ai/agents/prd";
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
@@ -92,6 +92,19 @@ export const generatePRDFunction = inngest.createFunction(
         });
       } catch (e) {
         console.warn("Failed to emit featureUpdated socket event:", e);
+      }
+    });
+
+    // Step 5: Increment Usage
+    await step.run("increment-usage", async () => {
+      const feature = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, featureRequestId),
+        with: { project: { with: { user: true } } }
+      });
+      if ((feature as any)?.project?.user?.id) {
+        await db.update(users)
+          .set({ totalExecutions: sql`${users.totalExecutions} + 1` })
+          .where(eq(users.id, (feature as any).project.user.id));
       }
     });
 

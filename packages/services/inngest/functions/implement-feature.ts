@@ -1,6 +1,6 @@
 import { inngest } from "../client";
 import { db } from "@repo/database";
-import { featureRequests, prds, tasks, codebaseEmbeddings, pullRequests } from "@repo/database/schema";
+import { featureRequests, prds, tasks, codebaseEmbeddings, pullRequests, users } from "@repo/database/schema";
 import { eq, sql } from "drizzle-orm";
 import { embedCode } from "../../ai/embeddings";
 import { getPlanningModel, getImplementationModel } from "../../ai/index";
@@ -492,6 +492,17 @@ ${contextStr}`;
         });
       } catch (e) {
         console.warn("Failed to emit featureUpdated socket event:", e);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7. Increment Usage
+    // ─────────────────────────────────────────────────────────────────────────
+    await step.run("increment-usage", async () => {
+      if ((data.feature as any)?.project?.user?.id) {
+        await db.update(users)
+          .set({ totalExecutions: sql`${users.totalExecutions} + 1` })
+          .where(eq(users.id, (data.feature as any).project.user.id));
       }
     });
 

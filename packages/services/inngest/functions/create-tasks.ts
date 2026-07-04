@@ -1,7 +1,7 @@
 import { inngest } from "../client";
 import { db } from "@repo/database";
-import { prds, tasks, featureRequests } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { prds, tasks, featureRequests, users } from "@repo/database/schema";
+import { eq, sql } from "drizzle-orm";
 import { generateTasksFromPRD } from "../../ai/agents/planning";
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.BASE_URL || "http://localhost:8000";
@@ -94,6 +94,19 @@ export const createTasksFunction = inngest.createFunction(
         });
       } catch (e) {
         console.warn("Failed to emit featureUpdated socket event:", e);
+      }
+    });
+
+    // Step 5: Increment Usage
+    await step.run("increment-usage", async () => {
+      const f = await db.query.featureRequests.findFirst({
+        where: eq(featureRequests.id, featureRequestId),
+        with: { project: { with: { user: true } } }
+      });
+      if ((f as any)?.project?.user?.id) {
+        await db.update(users)
+          .set({ totalExecutions: sql`${users.totalExecutions} + 1` })
+          .where(eq(users.id, (f as any).project.user.id));
       }
     });
 
