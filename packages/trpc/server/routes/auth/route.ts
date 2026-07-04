@@ -61,4 +61,26 @@ export const authRouter = router({
 
       return { success: true };
     }),
+  updateProfile: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      company: z.string().optional(),
+      onboardingRole: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = await import("@repo/database");
+      const { users } = await import("@repo/database/schema");
+      const { eq } = await import("drizzle-orm");
+
+      await db
+        .update(users)
+        .set({
+          name: input.name,
+          company: input.company,
+          onboardingRole: input.onboardingRole,
+        })
+        .where(eq(users.id, (ctx as any).user.id));
+
+      return { success: true };
+    }),
 });
