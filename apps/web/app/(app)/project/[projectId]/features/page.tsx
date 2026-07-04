@@ -95,9 +95,6 @@ export default function FeaturesListPage() {
             <p className="text-muted-foreground mt-2 text-center max-w-md">
               Create your first feature request to kick off the AI-powered discovery process.
             </p>
-            <Button className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => router.push(`/project/${projectId}/features/new`)}>
-              New Feature
-            </Button>
           </CardContent>
         </Card>
       ) : (
