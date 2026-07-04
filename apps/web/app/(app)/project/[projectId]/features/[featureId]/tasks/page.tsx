@@ -52,15 +52,17 @@ export default function TasksPage() {
   );
 
   const implementMutation = trpc.featureRequest.triggerImplementation.useMutation({
-    onSuccess: () => {
-      utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+    onSuccess: async () => {
+      await utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+      router.refresh();
       router.push(`/project/${projectId}/features/${featureId}`);
     },
   });
 
   const skipToReviewMutation = trpc.featureRequest.skipToReview.useMutation({
-    onSuccess: () => {
-      utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+    onSuccess: async () => {
+      await utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+      router.refresh();
       toast.success("Navigating to review — auto-discovering your PR...");
       router.push(`/project/${projectId}/features/${featureId}/reviews`);
     },
@@ -261,7 +263,7 @@ ${taskLines}
                     Starting AI Agent...
                   </>
                 ) : (
-                  "⚡ Implement with AI"
+                  "Implement with AI"
                 )}
               </button>
             </>

@@ -93,6 +93,7 @@ export default function DiscoveryPage() {
   const completeMutation = trpc.discovery.complete.useMutation({
     onSuccess: async () => {
       await utils.featureRequest.getById.invalidate({ featureRequestId: featureId });
+      router.refresh();
       toast.success("Discovery completed! PRD generation will begin shortly.");
       router.push(`/project/${projectId}/features/${featureId}`);
     },
