@@ -5,7 +5,7 @@ const envSchema = z.object({
 });
 
 function createEnv(env: NodeJS.ProcessEnv) {
-  if (env.SKIP_ENV_VALIDATION === "1") {
+  if (!!env.SKIP_ENV_VALIDATION && env.SKIP_ENV_VALIDATION !== "0" && env.SKIP_ENV_VALIDATION !== "false") {
     // Return dummy data during build to satisfy type checkers
     return { DATABASE_URL: "postgres://dummy:dummy@localhost:5432/dummy" };
   }
