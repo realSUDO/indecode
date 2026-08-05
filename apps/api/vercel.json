@@ -1,14 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "api/index.ts": {
+    "dist/api/index.js": {
       "maxDuration": 300
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/dist/api/index.js"
     }
   ]
 }
