@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // Note: 'output: standalone' removed - only needed for Docker/VPS deploys.
   async redirects() {
     return [
       {
@@ -11,14 +11,15 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    const apiUrl = process.env.API_URL || "http://127.0.0.1:8000";
     return [
       {
         source: "/trpc/:path*",
-        destination: (process.env.API_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://127.0.0.1:8000")) + "/trpc/:path*",
+        destination: `${apiUrl}/trpc/:path*`,
       },
       {
-        source: "/api/:path*",
-        destination: (process.env.API_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://127.0.0.1:8000")) + "/api/:path*",
+        source: "/api/webhooks/:path*",
+        destination: `${apiUrl}/api/webhooks/:path*`,
       },
     ];
   },

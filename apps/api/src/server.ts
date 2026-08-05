@@ -24,16 +24,18 @@ if (env.NODE_ENV !== "prod" && env.NODE_ENV !== "production") {
     }),
   );
 } else {
-  // Production CORS rules
+  // Build allowed origins from env vars so Vercel URLs don't need hardcoding
+  const allowedOrigins = [
+    process.env.NEXT_PUBLIC_APP_URL,          // e.g. https://in.indecode.in or *.vercel.app
+    process.env.AUTH_APP_URL,                  // e.g. https://auth.indecode.in
+    process.env.PAYMENT_APP_URL,               // e.g. https://payment.indecode.in
+    // Vercel preview deployments
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ].filter(Boolean) as string[];
+
   app.use(
     cors({
-      origin: [
-        "https://in.indecode.in",
-        "https://www.indecode.in",
-        "https://indecode.in",
-        "https://payment.indecode.in",
-        "https://auth.indecode.in"
-      ],
+      origin: allowedOrigins,
       credentials: true,
     })
   );
