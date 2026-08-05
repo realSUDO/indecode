@@ -1,14 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "dist/api/index.js": {
+    "dist/vercel-entry.js": {
       "maxDuration": 300
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/dist/api/index.js"
+      "dest": "/dist/vercel-entry.js"
     }
   ]
 }

@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: {
     "index": "./src/index.ts",
-    "api/index": "./api/index.ts"
+    "vercel-entry": "./vercel-entry.ts"
   },
   noExternal: ["@repo"], // transpile workspace packages natively
   external: ["better-auth", "better-auth/node", "drizzle-orm", "pg"],
