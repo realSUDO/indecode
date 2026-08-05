@@ -163,7 +163,7 @@ if (env.NODE_ENV !== "prod" && env.NODE_ENV !== "production") {
   app.use("/docs", async (req, res, next) => {
     try {
       const { apiReference } = await import("@scalar/express-api-reference");
-      apiReference({ url: "/openapi.json" })(req, res, next);
+      apiReference({ url: "/openapi.json" })(req, res);
     } catch (err) {
       next(err);
     }
