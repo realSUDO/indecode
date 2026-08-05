@@ -1,6 +1,3 @@
-import { Octokit } from "@octokit/rest";
-import { createAppAuth } from "@octokit/auth-app";
-
 // Re-use env variables to avoid duplicating them
 const getAppId = () => process.env.GITHUB_APP_ID || "";
 const getPrivateKey = () => process.env.GITHUB_PRIVATE_KEY || "";
@@ -9,7 +6,10 @@ const getPrivateKey = () => process.env.GITHUB_PRIVATE_KEY || "";
  * Get an Octokit instance authenticated as the GitHub App itself.
  * Used for fetching installations, generating installation tokens, etc.
  */
-export const getAppOctokit = () => {
+export const getAppOctokit = async () => {
+  const { Octokit } = await import("@octokit/rest");
+  const { createAppAuth } = await import("@octokit/auth-app");
+  
   return new Octokit({
     authStrategy: createAppAuth,
     auth: {
@@ -25,6 +25,9 @@ export const getAppOctokit = () => {
  * @param installationId - The numeric ID of the GitHub app installation.
  */
 export const getInstallationOctokit = async (installationId: number) => {
+  const { Octokit } = await import("@octokit/rest");
+  const { createAppAuth } = await import("@octokit/auth-app");
+
   return new Octokit({
     authStrategy: createAppAuth,
     auth: {

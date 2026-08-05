@@ -4,7 +4,7 @@ import { db } from "@repo/database";
 import { githubInstallations } from "@repo/database/schema";
 
 async function seed() {
-  const octokit = getAppOctokit();
+  const octokit = await getAppOctokit();
   const { data: installations } = await octokit.rest.apps.listInstallations();
 
   if (installations.length === 0) {
